@@ -31,12 +31,12 @@ void appViewMatrix() {
 }
 
 void render_start() {
-    if(!DEMMA_DEBUG)
+    if(!DEMMA_DEBUG && !skip_frame)
         startFrame();
 }
 
 void render_end() {
-    if(DEMMA_DEBUG)
+    if(DEMMA_DEBUG || skip_frame)
         endFrameDebug();
     else
         endFrame();

@@ -15,6 +15,10 @@ extern int DEMMA_DEBUG;
 #include "Game/color3rd.h"
 #include "psp/PPGFile.h"
 
+extern s32 flFrame;
+
+extern bool skip_frame;
+
 s32 flLogOut(s8* format, ...);
 s32 flPrintL(s32 posi_x, s32 posi_y, const s8* format, ...);
 s32 flPrintColor(u32 col);

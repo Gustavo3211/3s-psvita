@@ -60,6 +60,8 @@ void cpExitTask(u16 num);
 
 int c_x, c_y, c_v_x = 1, c_v_y = 1;
 
+bool fps_30 = 0;
+
 void AcrMain() {
     u16 sw_buff;
     u32 sysinfodisp;
@@ -93,6 +95,9 @@ void AcrMain() {
     }
     if(p1sw_buff & 0x8000){
         experimental_bg = 1;
+    }
+    if(p1sw_buff & 0x0001){
+        fps_30 = 1;
     }
 
     while (1) {
@@ -216,9 +221,9 @@ void AcrMain() {
             //drawRect(c_x, c_y, 10, 10, 0xFFFFFFFF);
         
         //quadOnly2DrawLast(-1);
-        
-        render_end();
 
+        render_end();
+    
         sysinfodisp = 0;
 
         if (Debug_w[2] == 2) {
@@ -242,6 +247,9 @@ void AcrMain() {
         //flSetDebugMode(sysinfodisp);
         disp_effect_work();
         flFlip(0);
+
+        if(fps_30)
+            skip_frame = flFrame % 2;
 
         Interrupt_Timer += 1;
         Record_Timer += 1;

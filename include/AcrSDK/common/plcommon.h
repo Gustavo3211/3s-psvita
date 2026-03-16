@@ -46,7 +46,7 @@ typedef struct {
     u32 format;         // offset 0x20, size 0x4
     u32 mem_handle;     // offset 0x24, size 0x4
     s16 dma_width;      // offset 0x28, size 0x2
-    s16 dma_height;     // offset 0x2A, size 0x2
+    s16 swizzeled;     // offset 0x2A, size 0x2
     uintptr_t lock_ptr; // offset 0x2C, size 0x4
     u32 tex_num;        // offset 0x30, size 0x4
     s8 be_flag;         // offset 0x34, size 0x1

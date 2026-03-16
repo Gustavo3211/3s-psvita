@@ -181,7 +181,7 @@ void njdp2d_draw() {
     for (i = njdp2d_w.ix1st; i != -1; i = njdp2d_w.prim[i].next) {
         switch (njdp2d_w.prim[i].type) {
         case 0:
-            if(DEMMA_DEBUG)
+            if(DEMMA_DEBUG || skip_frame)
                 break;
             vertices = (ColorVertex*) sceGuGetMemory(6 * sizeof(ColorVertex));
             //Vertex vertices[2];

@@ -1596,7 +1596,7 @@ void seqsAfterProcess() {
             seqs_w.sprMax = seqs_w.sprTotal;
         }
 
-        if(DEMMA_DEBUG)
+    if(DEMMA_DEBUG || skip_frame)
             return;
 
         //ps2SeqsRenderQuadInit_A();

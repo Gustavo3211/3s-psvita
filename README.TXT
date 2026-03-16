@@ -9,6 +9,7 @@ then extract the files on SF33RD.AFS and place them in resources/ next to the EB
 CONFIGS:
 -press start at boot to disable backgrounds
 -press select at boot to enable experimental background cashing
+-press up at boot for 30fps mode
 
 TO-DO:
 

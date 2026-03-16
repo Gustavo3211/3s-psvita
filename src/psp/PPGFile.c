@@ -148,7 +148,7 @@ s32 ppgWriteQuadWithST_A2(Vertex* pos, u32 col) {
 
 void ppgWriteQuadOnly(Vertex* pos, u32 col, u32 texCode) {
 
-    if(DEMMA_DEBUG)
+    if(DEMMA_DEBUG || skip_frame)
         return;
 
     TextureVertex *vertices = (TextureVertex*)sceGuGetMemory(4 * sizeof(TextureVertex));
@@ -172,7 +172,7 @@ void ppgWriteQuadOnly(Vertex* pos, u32 col, u32 texCode) {
 
 void ppgWriteQuadOnly2(Vertex* pos, u32 col, u32 texCode) {
 
-    if(DEMMA_DEBUG)
+    if(DEMMA_DEBUG || skip_frame)
         return;
 
     if(bg2_i >= BG2_MAX)

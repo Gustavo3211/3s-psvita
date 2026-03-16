@@ -31,11 +31,19 @@ s32 flFrame;
 
 int debug_mode = 0;
 
+bool skip_frame = 0;
+
 #define MAX_BG_BUFFER 4
 #define BG_BUFF_SIZE_X 256
 #define BG_BUFF_SIZE_Y 128
 static void *bg_buffer[MAX_BG_BUFFER];
 static bool bg_used[MAX_BG_BUFFER];
+
+#define MAX_BG2_BUFFER 8
+#define BG2_BUFF_SIZE_X 64
+#define BG2_BUFF_SIZE_Y 64
+static void *bg2_buffer[MAX_BG2_BUFFER];
+static bool bg2_used[MAX_BG2_BUFFER];
 
 void enableDebug(){
     if(debug_mode == 0){
@@ -105,6 +113,9 @@ u32 flPS2GetTextureSize(u32 format, s32 dw, s32 dh, s32 bnum);
 s32 flPS2LockTexture(Rect* /* unused */, FLTexture* lpflTexture, plContext* lpcontext, u32 flag, s32 /* unused */);
 s32 flPS2UnlockTexture(FLTexture*);
 static s32 system_work_init();
+
+
+void swizzle_inplace(void *data, uint32_t width_bytes, uint32_t height);
 
 u32 flCreateTextureHandle(plContext* bits, u32 flag) {
     FLTexture* lpflTexture;
@@ -393,15 +404,30 @@ s32 flReleaseTextureHandle(u32 texture_handle) {
 
     else if (lpflTexture->wkVram != NULL) {
         int i;
+        int k = 0;
         for(i = 0; i < MAX_BG_BUFFER; i++){
             if(bg_buffer[i] == lpflTexture->wkVram)
                 break;
         }
         if(i == MAX_BG_BUFFER){
-            free(lpflTexture->wkVram);
+            k++;
         }
         else{
             bg_used[i] = false;
+        }
+
+        for(i = 0; i < MAX_BG2_BUFFER; i++){
+            if(bg2_buffer[i] == lpflTexture->wkVram)
+                break;
+        }
+        if(i == MAX_BG2_BUFFER){
+            k++;
+        }
+        else{
+            bg2_used[i] = false;
+        }
+        if(k == 2){
+            free(lpflTexture->wkVram);
         }
         lpflTexture->wkVram = NULL;
     }
@@ -1110,6 +1136,12 @@ s32 flInitialize(s32 /* unused */, s32 /* unused */){
             bg_used[i] = true;
     }
 
+    for(int i = 0; i < MAX_BG2_BUFFER; i++){
+        bg2_buffer[i] = guGetStaticVramTexture(BG2_BUFF_SIZE_X, BG2_BUFF_SIZE_Y, GU_PSM_T8);
+        if(bg2_buffer[i] == NULL)
+            bg2_used[i] = true;
+    }
+
     flPS2SystemTmpBuffInit();
     flPADInitialize();
 
@@ -1206,6 +1238,7 @@ s32 flPS2ConvertTextureFromContext(plContext* lpcontext, FLTexture* lpflTexture,
     //memcpy(lpflTexture->wkVram, lpcontext->ptr, lpflTexture->size);
 
     u8 *dst_ptr = flPS2GetSystemBuffAdrs(lpflTexture->mem_handle);
+    u8 *base_ptr = dst_ptr;
     s32 tex_size;
     s32 dw = lpflTexture->width;
     s32 dh = lpflTexture->height;
@@ -1261,19 +1294,37 @@ s32 flPS2ConvertTextureFromContext(plContext* lpcontext, FLTexture* lpflTexture,
         dh >>= 1;
         lpcontext++;
     }
+    if(lpflTexture->tex_num > 1)
+        return 1;
 
-    if(lpflTexture->width == BG_BUFF_SIZE_X && lpflTexture->height == BG_BUFF_SIZE_Y && lpflTexture->format == GU_PSM_T8){
+    //if(lpflTexture->width == BG_BUFF_SIZE_X && lpflTexture->height == BG_BUFF_SIZE_Y && lpflTexture->format == GU_PSM_T8){
+    if(dst_ptr - base_ptr == BG_BUFF_SIZE_X * BG_BUFF_SIZE_Y){
         int i;
         for(i = 0; i < MAX_BG_BUFFER; i++){
             if(!bg_used[i])
                 break;
         }
         if(i != MAX_BG_BUFFER){
-            memcpy(bg_buffer[i], dst_ptr, BG_BUFF_SIZE_X*BG_BUFF_SIZE_Y);
+            memcpy(bg_buffer[i], base_ptr, BG_BUFF_SIZE_X*BG_BUFF_SIZE_Y);
             lpflTexture->wkVram = bg_buffer[i];
             flPS2ReleaseSystemMemory(lpflTexture->mem_handle);
             lpflTexture->mem_handle = 0;
             bg_used[i] = true;
+        }
+    }
+    //else if(lpflTexture->width == BG2_BUFF_SIZE_X && lpflTexture->height == BG2_BUFF_SIZE_Y && lpflTexture->format == GU_PSM_T8){
+    else if(dst_ptr - base_ptr == BG2_BUFF_SIZE_X * BG2_BUFF_SIZE_Y || dst_ptr - base_ptr == BG2_BUFF_SIZE_X * BG2_BUFF_SIZE_Y / 2){
+        int i;
+        for(i = 0; i < MAX_BG2_BUFFER; i++){
+            if(!bg2_used[i])
+                break;
+        }
+        if(i != MAX_BG2_BUFFER){
+            memcpy(bg2_buffer[i], base_ptr, dst_ptr - base_ptr);
+            lpflTexture->wkVram = bg2_buffer[i];
+            flPS2ReleaseSystemMemory(lpflTexture->mem_handle);
+            lpflTexture->mem_handle = 0;
+            bg2_used[i] = true;
         }
     }
     return 1;
