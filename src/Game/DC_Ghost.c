@@ -172,10 +172,18 @@ void njdp2d_init() {
 }
 
 void njdp2d_draw() {
-    ColorVertex* vertices;
-    s32 i;
-    s32 j;
-    s32 k;
+    ColorVertex *vertices, *vertices_total;
+    s32 i, j, k, w = 0;
+
+    for (i = njdp2d_w.ix1st; i != -1; i = njdp2d_w.prim[i].next) {
+        if(njdp2d_w.prim[i].type == 0)
+            w += 6;
+    }
+
+    if(!DEMMA_DEBUG && !skip_frame)
+        vertices_total = (ColorVertex*) sceGuGetMemory(w * sizeof(ColorVertex));
+
+    w = 0;
 
     sceGuDisable(GU_TEXTURE_2D);
     for (i = njdp2d_w.ix1st; i != -1; i = njdp2d_w.prim[i].next) {
@@ -183,7 +191,7 @@ void njdp2d_draw() {
         case 0:
             if(DEMMA_DEBUG || skip_frame)
                 break;
-            vertices = (ColorVertex*) sceGuGetMemory(6 * sizeof(ColorVertex));
+            vertices = &vertices_total[w];
             //Vertex vertices[2];
             //static ColorVertex vertices[6];
 
@@ -200,7 +208,7 @@ void njdp2d_draw() {
             vertices[5].y = njdp2d_w.prim[i].v[j].y;
             vertices[5].z = njdp2d_w.prim[i].v[j].z * 0xFFFF;
             vertices[5].colour = njdp2d_w.prim[i].col;
-            sceGuDrawArray(GU_TRIANGLES, GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 6, 0, vertices);
+            w += 6;
             break;
 
         case 1:
@@ -208,6 +216,8 @@ void njdp2d_draw() {
             break;
         }
     }
+    if(!DEMMA_DEBUG && !skip_frame)
+        sceGuDrawArray(GU_TRIANGLES, GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, w, 0, vertices_total);
     sceGuEnable(GU_TEXTURE_2D);
     njdp2d_init();
 }
