@@ -171,7 +171,7 @@ void njdp2d_init() {
     njdp2d_w.total = 0;
 }
 
-void njdp2d_draw() {
+void njdp2d_draw_0() {
     ColorVertex *vertices, *vertices_total;
     s32 i, j, k, w = 0;
 
@@ -180,20 +180,20 @@ void njdp2d_draw() {
             w += 6;
     }
 
-    if(!DEMMA_DEBUG && !skip_frame)
-        vertices_total = (ColorVertex*) sceGuGetMemory(w * sizeof(ColorVertex));
+    if(DEMMA_DEBUG || skip_frame){
+        njdp2d_init();
+        return;
+    }
+    vertices_total = (ColorVertex*) sceGuGetMemory(w * sizeof(ColorVertex));
+    if(vertices_total == NULL)
+        return;
 
     w = 0;
 
     sceGuDisable(GU_TEXTURE_2D);
     for (i = njdp2d_w.ix1st; i != -1; i = njdp2d_w.prim[i].next) {
-        switch (njdp2d_w.prim[i].type) {
-        case 0:
-            if(DEMMA_DEBUG || skip_frame)
-                break;
+        if (njdp2d_w.prim[i].type == 0) {
             vertices = &vertices_total[w];
-            //Vertex vertices[2];
-            //static ColorVertex vertices[6];
 
             for(j = 0; j < 3; j++){
                 k = -j + 5;
@@ -201,25 +201,27 @@ void njdp2d_draw() {
                 vertices[k].y = vertices[j].y = njdp2d_w.prim[i].v[j].y;
                 vertices[k].z = vertices[j].z = njdp2d_w.prim[i].v[j].z * 0xFFFF;
                 vertices[k].colour = vertices[j].colour = njdp2d_w.prim[i].col;
-                //vertices[j].colour = 0xFFFFFFFF;
-                //drawRect(vertices[j].x, vertices[j].y, 8, 8, 0xFFFFFFFF);
             }
             vertices[5].x = njdp2d_w.prim[i].v[j].x;
             vertices[5].y = njdp2d_w.prim[i].v[j].y;
             vertices[5].z = njdp2d_w.prim[i].v[j].z * 0xFFFF;
             vertices[5].colour = njdp2d_w.prim[i].col;
             w += 6;
-            break;
-
-        case 1:
-            shadow_drawing((WORK*)njdp2d_w.prim[i].col, njdp2d_w.prim[i].v[0].y);
-            break;
         }
     }
     if(!DEMMA_DEBUG && !skip_frame)
         sceGuDrawArray(GU_TRIANGLES, GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, w, 0, vertices_total);
     sceGuEnable(GU_TEXTURE_2D);
     njdp2d_init();
+}
+
+void njdp2d_draw_1() {
+    s32 i;
+    for (i = njdp2d_w.ix1st; i != -1; i = njdp2d_w.prim[i].next) {
+        if (njdp2d_w.prim[i].type == 1) {
+            shadow_drawing((WORK*)njdp2d_w.prim[i].col, njdp2d_w.prim[i].v[0].y);
+        }
+    }
 }
 
 // `col` needs to be `uintptr_t` because it sometimes stores a pointer to `WORK`

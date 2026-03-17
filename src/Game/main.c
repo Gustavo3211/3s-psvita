@@ -209,12 +209,14 @@ void AcrMain() {
         MaskScreenEdge();
 
         seqsBeforeProcess();
-        njdp2d_draw();
+        njdp2d_draw_1();
         seqsAfterProcess();
 
         if (Debug_w[6] == 0) {
             //CP3toPS2Draw();
+            ppgDrawQuads();
         }
+        njdp2d_draw_0();
 
         
         //if(!DEMMA_DEBUG)

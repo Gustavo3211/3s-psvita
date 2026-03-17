@@ -41,6 +41,16 @@ const u8 pplColorModeWidth[4] = { 0xF, 0x3F, 0xFF, 0 };
 PPG_W ppg_w;
 s16* dctex_linear;
 
+typedef struct {
+    u32 texCode;
+    TextureVertex v[4];
+} Quad4;
+
+#define MAX_QUADS 1024
+
+static Quad4 gQuadBuffer[MAX_QUADS];
+static int gQuadCount = 0;
+
 #define BG2_MAX 1024
 TextureVertex *bg2_vertices = NULL;
 u32 bg2_i = 0;
@@ -146,28 +156,102 @@ s32 ppgWriteQuadWithST_A2(Vertex* pos, u32 col) {
     return 1;
 }
 
+int quadCompare(const void *a, const void *b) {
+    const Quad4 *qa = (const Quad*)a;
+    const Quad4 *qb = (const Quad*)b;
+
+    if (qa->texCode < qb->texCode) return -1;
+    if (qa->texCode > qb->texCode) return 1;
+    return 0;
+}
+
 void ppgWriteQuadOnly(Vertex* pos, u32 col, u32 texCode) {
+    if (gQuadCount >= MAX_QUADS)
+        return; // or flush here
 
-    if(DEMMA_DEBUG || skip_frame)
-        return;
+    Quad4 *q = &gQuadBuffer[gQuadCount];
 
-    TextureVertex *vertices = (TextureVertex*)sceGuGetMemory(4 * sizeof(TextureVertex));
-    //static TextureVertex vertices[4];
     int texture_handle = LO_16_BITS(texCode) - 1;
     FLTexture *tex = &flTexture[texture_handle];
-    s32 i;
 
-    for (i = 0; i < 4; i++) {
-        vertices[i].x = pos[i].x;
-        vertices[i].y = pos[i].y;
-        vertices[i].z = pos[i].z * 0xFFFF;
-        vertices[i].u = (short) (pos[i].u * tex->width);
-        vertices[i].v = (short) (pos[i].v * tex->height);
-        vertices[i].colour = col;
+    q->texCode = texCode;
+
+    for (int i = 0; i < 4; i++) {
+        q->v[i].x = pos[i].x;
+        q->v[i].y = pos[i].y;
+        q->v[i].z = pos[i].z * 0xFFFF;
+        q->v[i].u = (short)(pos[i].u * tex->width);
+        q->v[i].v = (short)(pos[i].v * tex->height);
+        q->v[i].colour = col;
     }
 
-    flSetRenderState(FLRENDER_TEXSTAGE0, texCode);
-    sceGuDrawArray(GU_TRIANGLE_STRIP, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 4, 0, vertices);
+    gQuadCount++;
+}
+
+void ppgDrawQuads() {
+
+    if (gQuadCount == 0)
+        return;
+
+    if (DEMMA_DEBUG || skip_frame){
+        gQuadCount = 0;
+        return;
+    }
+
+
+    // Sort quads by texture
+    qsort(gQuadBuffer, gQuadCount, sizeof(Quad), quadCompare);
+
+    u32 i = 0, q;
+    u32 currentTex;
+    u32 start;
+    u32 quadCount;
+    u32 vertCount;
+    TextureVertex *guVerts;
+    TextureVertex *dst;
+
+    while (i < gQuadCount) {
+
+        currentTex = gQuadBuffer[i].texCode;
+
+        // Count how many quads share this texture
+        start = i;
+        while (i < gQuadCount && gQuadBuffer[i].texCode == currentTex) {
+            i++;
+        }
+        quadCount = i - start;
+        vertCount = quadCount << 2;
+
+        // Allocate GU memory
+        guVerts = (TextureVertex*)sceGuGetMemory(
+            vertCount * sizeof(TextureVertex)
+        );
+
+        if(guVerts == NULL)
+            break;
+
+        // Copy vertices
+        dst = guVerts;
+
+        for (q = start; q < i; q++) {
+            memcpy(dst, gQuadBuffer[q].v, sizeof(TextureVertex) << 2);
+            dst += 4;
+        }
+
+        // Set texture once
+        flSetRenderState(FLRENDER_TEXSTAGE0, currentTex);
+
+        // Draw all quads in one call
+        sceGuDrawArray(
+            GU_TRIANGLE_STRIP,
+            GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D,
+            vertCount,
+            0,
+            guVerts
+        );
+    }
+
+    gQuadCount = 0;
 }
 
 void ppgWriteQuadOnly2(Vertex* pos, u32 col, u32 texCode) {
