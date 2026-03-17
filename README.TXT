@@ -13,7 +13,10 @@ CONFIGS:
 
 TO-DO:
 
--src/Game/menu.c:
+src/Game/PPGFile.c:
+-remove and fix the u * tex->width, v * tex->height
+
+src/Game/menu.c:
 -SaveMove()
 -SaveInit(,)
 

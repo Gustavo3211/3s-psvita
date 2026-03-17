@@ -288,8 +288,8 @@ void ppgWriteQuadOnly2(Vertex* pos, u32 col, u32 texCode) {
         vertices[i].x = pos[i*3].x;
         vertices[i].y = pos[i*3].y;
         vertices[i].z = pos[i*3].z  * 0xFFFF;
-        vertices[i].u = (short) (pos[i*3].u * tex->width);
-        vertices[i].v = (short) (pos[i*3].v * tex->height);
+        vertices[i].u = (short) (pos[i*3].u);
+        vertices[i].v = (short) (pos[i*3].v);
         vertices[i].colour = col;
     }
 
@@ -449,15 +449,15 @@ s32 ppgWriteQuadUseTrans(Vertex* pos, u32 col, PPGDataList* tb, s32 tix, s32 cix
             ppgh = ppg->height;
             pxs = pos[3].x - pos[0].x;
             pys = pos[3].y - pos[0].y;
-            sadd = 0.5f / pxs;
-            tadd = 0.5f / pys;
+            sadd = ppgwf * 0.5f / pxs;
+            tadd = ppghf * 0.5f / pys;
 
-            if (sadd >= (1.0f / (16.0f * ppgwf))) {
-                sadd = 1.0f / (16.0f * ppgwf);
+            if (sadd >= (1.0f / (16.0f))) {
+                sadd = 1.0f / (16.0f);
             }
 
-            if (tadd >= (1.0f / (16.0f * ppghf))) {
-                tadd = 1.0f / (16.0f * ppghf);
+            if (tadd >= (1.0f / (16.0f))) {
+                tadd = 1.0f / (16.0f);
             }
 
 #if !defined(TARGET_PS2)
@@ -482,36 +482,36 @@ s32 ppgWriteQuadUseTrans(Vertex* pos, u32 col, PPGDataList* tb, s32 tix, s32 cix
                 sy = iPoint / ppgw;
 
                 if (flip & 1) {
-                    qvtx[3].x = pos->x + (pxs * (ppgw - sx) / ppgwf);
-                    qvtx[0].x = pos->x + (pxs * (ppgw - (sx + xs)) / ppgwf);
+                    qvtx[3].x = pos->x + (pxs * (ppgw - sx));
+                    qvtx[0].x = pos->x + (pxs * (ppgw - (sx + xs)));
                 } else {
-                    qvtx[0].x = pos->x + (sx * pxs / ppgwf);
-                    qvtx[3].x = pos->x + (pxs * (sx + xs) / ppgwf);
+                    qvtx[0].x = pos->x + (sx * pxs);
+                    qvtx[3].x = pos->x + (pxs * (sx + xs));
                 }
 
                 if (flip & 2) {
-                    qvtx[3].y = pos->y + (pys * (ppgw - sy) / ppghf);
-                    qvtx[0].y = pos->y + (pys * (ppgw - (sy + ys)) / ppghf);
+                    qvtx[3].y = pos->y + (pys * (ppgw - sy));
+                    qvtx[0].y = pos->y + (pys * (ppgw - (sy + ys)));
                 } else {
-                    qvtx[0].y = pos->y + (sy * pys / ppghf);
-                    qvtx[3].y = pos->y + (pys * (sy + ys) / ppghf);
+                    qvtx[0].y = pos->y + (sy * pys);
+                    qvtx[3].y = pos->y + (pys * (sy + ys));
                 }
 
                 if ((qvtx[0].x < 384.0f) && (qvtx[3].x >= 0.0f) && (qvtx[0].y < 224.0f) && (qvtx[3].y >= 0.0f)) {
                     if (flip & 1) {
-                        qvtx[3].u= (sx / ppgwf) - sadd;
-                        qvtx[0].u= ((sx + xs) / ppgwf) - sadd;
+                        qvtx[3].u= sx - sadd;
+                        qvtx[0].u= (sx + xs) - sadd;
                     } else {
-                        qvtx[0].u= sadd + (sx / ppgwf);
-                        qvtx[3].u= sadd + ((sx + xs) / ppgwf);
+                        qvtx[0].u= sadd + sx;
+                        qvtx[3].u= sadd + (sx + xs);
                     }
 
                     if (flip & 2) {
-                        qvtx[3].v = (sy / ppghf) - tadd;
-                        qvtx[0].v = ((sy + ys) / ppghf) - tadd;
+                        qvtx[3].v = sy - tadd;
+                        qvtx[0].v = (sy + ys) - tadd;
                     } else {
-                        qvtx[0].v = tadd + (sy / ppghf);
-                        qvtx[3].v = tadd + ((sy + ys) / ppghf);
+                        qvtx[0].v = tadd + sy;
+                        qvtx[3].v = tadd + (sy + ys);
                     }
 
                     ppgWriteQuadOnly2(qvtx, col, texhan | (palhan << 0x10));
@@ -532,23 +532,27 @@ s32 ppgWriteQuadUseTrans(Vertex* pos, u32 col, PPGDataList* tb, s32 tix, s32 cix
 
     switch (flip) {
     case 0:
-        pos[0].u= pos[0].v = 0.0f;
-        pos[3].u= pos[3].v = 1.0f;
+        pos[0].u = pos[0].v = 0.0f;
+        pos[3].u = ppgwf;
+        pos[3].v = ppghf;
         break;
 
     case 1:
-        pos[3].u= pos[0].v = 0.0f;
-        pos[0].u= pos[3].v = 1.0f;
+        pos[3].u = pos[0].v = 0.0f;
+        pos[0].u = ppgwf;
+        pos[3].v = ppghf;
         break;
 
     case 2:
-        pos[0].u= pos[3].v = 0.0f;
-        pos[3].u= pos[0].v = 1.0f;
+        pos[0].u = pos[3].v = 0.0f;
+        pos[3].u = ppgwf;
+        pos[0].v = ppghf;
         break;
 
     default:
-        pos[0].u= pos[0].v = 1.0f;
-        pos[3].u= pos[3].v = 0.0f;
+        pos[0].u = ppgwf;
+        pos[0].v = ppghf;
+        pos[3].u = pos[3].v = 0.0f;
         break;
     }
 
