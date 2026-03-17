@@ -1620,8 +1620,8 @@ void seqsAfterProcess() {
                     vertices[j + k].x = seqs_w.chip[i].v[j].x;
                     vertices[j + k].y = seqs_w.chip[i].v[j].y;
                     vertices[j + k].z = seqs_w.chip[i].v[j].z * 0xFFFF;
-                    vertices[j + k].u = (short) (seqs_w.chip[i].t[j].s * tex->width);
-                    vertices[j + k].v = (short) (seqs_w.chip[i].t[j].t * tex->height);
+                    vertices[j + k].u = (short) (seqs_w.chip[i].t[j].s);
+                    vertices[j + k].v = (short) (seqs_w.chip[i].t[j].t);
                     vertices[j + k].colour = seqs_w.chip[i].vertex_color;
                 }
                 //ps2SeqsRenderQuad_Ax(&seqs_w.chip[i]);
@@ -1676,19 +1676,19 @@ s32 seqsStoreChip(f32 x, f32 y, s32 w, s32 h, s32 gix, s32 code, s32 attr, s32 a
     appRenewTempPriority_1_Chip();
 
     if (attr & 0x8000) {
-        chip->t[1].s = (u - dx) / 256.0f;
-        chip->t[0].s = (u + w - dx) / 256.0f;
+        chip->t[1].s = (u - dx);
+        chip->t[0].s = (u + w - dx);
     } else {
-        chip->t[0].s = (u + dx) / 256.0f;
-        chip->t[1].s = (u + w + dx) / 256.0f;
+        chip->t[0].s = (u + dx);
+        chip->t[1].s = (u + w + dx);
     }
 
     if (attr & 0x4000) {
-        chip->t[1].t = (v - dy) / 256.0f;
-        chip->t[0].t = (v + h - dy) / 256.0f;
+        chip->t[1].t = (v - dy);
+        chip->t[0].t = (v + h - dy);
     } else {
-        chip->t[0].t = (v + dy) / 256.0f;
-        chip->t[1].t = (v + h + dy) / 256.0f;
+        chip->t[0].t = (v + dy);
+        chip->t[1].t = (v + h + dy);
     }
 
     chip->tex_code |= ppgGetUsingPaletteHandle(NULL, attr & 0x1FF) << 16;
