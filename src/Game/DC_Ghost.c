@@ -163,6 +163,7 @@ void njDrawSprite(Polygon* polygon, s32 /* unused */, s32 tex, s32 /* unused */)
     vtx[0] = ((_Polygon*)polygon)[0].v;
     vtx[3] = ((_Polygon*)polygon)[3].v;
 
+
     ppgWriteQuadWithST_B2(vtx, polygon[0].col, 0, tex, -1);
 }
 

@@ -15,6 +15,7 @@ TO-DO:
 
 src/Game/PPGFile.c:
 -remove and fix the u * tex->width, v * tex->height
+-fix ppgWriteQuadUseTrans
 
 src/Game/menu.c:
 -SaveMove()

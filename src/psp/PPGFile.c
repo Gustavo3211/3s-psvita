@@ -242,13 +242,7 @@ void ppgDrawQuads() {
         flSetRenderState(FLRENDER_TEXSTAGE0, currentTex);
 
         // Draw all quads in one call
-        sceGuDrawArray(
-            GU_TRIANGLE_STRIP,
-            GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D,
-            vertCount,
-            0,
-            guVerts
-        );
+        sceGuDrawArray(GU_TRIANGLE_STRIP, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, vertCount, 0, guVerts);
     }
 
     gQuadCount = 0;
@@ -259,31 +253,15 @@ void ppgWriteQuadOnly2(Vertex* pos, u32 col, u32 texCode) {
     if(DEMMA_DEBUG || skip_frame)
         return;
 
-    if(bg2_i >= BG2_MAX)
-        return;
+    TextureVertex *vertices = sceGuGetMemory(2 * sizeof(TextureVertex));
 
-    TextureVertex *vertices;
-    if(experimental_bg){
-        if(bg2_vertices == NULL){
-            bg2_vertices = sceGuGetMemory(BG2_MAX * sizeof(TextureVertex));
-            bg2_i = 0;
-            bg2_s = 0;
-            bg2_tex = -1;
-        }
-
-        vertices = &bg2_vertices[bg2_i];
-    }
-    else
-        vertices = sceGuGetMemory(2 * sizeof(TextureVertex));
-    
-    //TextureVertex vertices[2];
     int texture_handle = LO_16_BITS(texCode) - 1;
     FLTexture *tex = &flTexture[texture_handle];
     s32 i;
-    
-    //flLogOut("ppgWriteQuadOnly2 %x %d %d %d\n", tex->wkVram, tex->width, tex->height, texCode);
 
+    
     for (i = 0; i < 2; i++) {
+ 
         //flLogOut("x %f y %f u %f v %f\n",pos[i].x,pos[i].y,pos[i].u,pos[i].u);
         vertices[i].x = pos[i*3].x;
         vertices[i].y = pos[i*3].y;
@@ -293,26 +271,12 @@ void ppgWriteQuadOnly2(Vertex* pos, u32 col, u32 texCode) {
         vertices[i].colour = col;
     }
 
-    if(experimental_bg){
-        if(texCode != bg2_tex){
-            quadOnly2DrawLast(texCode);
-        }
-        bg2_i += 2;
-    }
-    else{
-        flSetRenderState(FLRENDER_TEXSTAGE0, texCode);
-        sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 2, 0, vertices);
-    }
+    flSetRenderState(FLRENDER_TEXSTAGE0, texCode);
+    sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 2, 0, vertices);
 }
 
 void quadOnly2DrawLast(u32 texCode){
-    if(bg2_tex == -1)
-        bg2_tex = texCode;
-    flSetRenderState(FLRENDER_TEXSTAGE0, bg2_tex);
-    if(bg2_i < BG2_MAX && bg2_i > bg2_s)
-        sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, bg2_i - bg2_s, 0, &bg2_vertices[bg2_s]);
-    bg2_s = bg2_i;
-    bg2_tex = texCode;
+    
 }
 
 s32 ppgWriteQuadWithST_B(Vertex* pos, u32 col, PPGDataList* tb, s32 tix, s32 cix) {
@@ -389,7 +353,6 @@ s32 ppgWriteQuadUseTrans(Vertex* pos, u32 col, PPGDataList* tb, s32 tix, s32 cix
     u32 sx;
     u32 sy;
     u32 ppgw;
-    u32 ppgh;
     u16* phan;
     u16 palhan;
     u16 texhan;
@@ -408,6 +371,9 @@ s32 ppgWriteQuadUseTrans(Vertex* pos, u32 col, PPGDataList* tb, s32 tix, s32 cix
     f32 ppghf;
     PPGFileHeader* ppg;
 
+    s16 tWidth, tHeight;
+    f32 tWScale, tHScale;
+
     if ((pos[0].x >= 384.0f) || (pos[3].x < 0.0f) || (pos[0].y >= 224.0f) || (pos[3].y < 0.0f)) {
         return 0;
     }
@@ -422,6 +388,9 @@ s32 ppgWriteQuadUseTrans(Vertex* pos, u32 col, PPGDataList* tb, s32 tix, s32 cix
 
     texhan = tb->tex->handle[tix - tb->tex->ixNum1st].b16[0];
     ix_ofs = tb->tex->handle[tix - tb->tex->ixNum1st].b16[1];
+
+    tWidth = flTexture[texhan].width;
+    tHeight = flTexture[texhan].height;
 
     if (texhan == 0) {
         return 0;
@@ -446,27 +415,27 @@ s32 ppgWriteQuadUseTrans(Vertex* pos, u32 col, PPGDataList* tb, s32 tix, s32 cix
             ppgwf = ppg->width;
             ppgw = ppg->width;
             ppghf = ppg->height;
-            ppgh = ppg->height;
             pxs = pos[3].x - pos[0].x;
             pys = pos[3].y - pos[0].y;
-            sadd = ppgwf * 0.5f / pxs;
-            tadd = ppghf * 0.5f / pys;
+            sadd = 0.5f / pxs;
+            tadd = 0.5f / pys;
 
-            if (sadd >= (1.0f / (16.0f))) {
-                sadd = 1.0f / (16.0f);
+            if (sadd >= (1.0f / (16.0f * ppgwf))) {
+                sadd = 1.0f / (16.0f * ppgwf);
             }
 
-            if (tadd >= (1.0f / (16.0f))) {
-                tadd = 1.0f / (16.0f);
+            if (tadd >= (1.0f / (16.0f * ppghf))) {
+                tadd = 1.0f / (16.0f * ppghf);
             }
 
-#if !defined(TARGET_PS2)
             sadd = 0;
             tadd = 0;
-#endif
 
             qvtx[0].z = pos[0].z;
             qvtx[3].z = pos[3].z;
+
+            tWScale = tWidth / ppgwf;
+            tHScale = tHeight / ppghf;
 
             for (i = 0; i < transTotal; i++) {
                 if (ix_ofs & 0x4000) {
@@ -482,36 +451,36 @@ s32 ppgWriteQuadUseTrans(Vertex* pos, u32 col, PPGDataList* tb, s32 tix, s32 cix
                 sy = iPoint / ppgw;
 
                 if (flip & 1) {
-                    qvtx[3].x = pos->x + (pxs * (ppgw - sx));
-                    qvtx[0].x = pos->x + (pxs * (ppgw - (sx + xs)));
+                    qvtx[3].x = pos->x + (pxs * (ppgw - sx) / ppgwf);
+                    qvtx[0].x = pos->x + (pxs * (ppgw - (sx + xs)) / ppgwf);
                 } else {
-                    qvtx[0].x = pos->x + (sx * pxs);
-                    qvtx[3].x = pos->x + (pxs * (sx + xs));
+                    qvtx[0].x = pos->x + (sx * pxs / ppgwf);
+                    qvtx[3].x = pos->x + (pxs * (sx + xs) / ppgwf);
                 }
 
                 if (flip & 2) {
-                    qvtx[3].y = pos->y + (pys * (ppgw - sy));
-                    qvtx[0].y = pos->y + (pys * (ppgw - (sy + ys)));
+                    qvtx[3].y = pos->y + (pys * (ppghf - sy) / ppghf);
+                    qvtx[0].y = pos->y + (pys * (ppghf - (sy + ys)) / ppghf);
                 } else {
-                    qvtx[0].y = pos->y + (sy * pys);
-                    qvtx[3].y = pos->y + (pys * (sy + ys));
+                    qvtx[0].y = pos->y + (sy * pys / ppghf);
+                    qvtx[3].y = pos->y + (pys * (sy + ys) / ppghf);
                 }
 
                 if ((qvtx[0].x < 384.0f) && (qvtx[3].x >= 0.0f) && (qvtx[0].y < 224.0f) && (qvtx[3].y >= 0.0f)) {
                     if (flip & 1) {
-                        qvtx[3].u= sx - sadd;
-                        qvtx[0].u= (sx + xs) - sadd;
+                        qvtx[3].u = (sx * tWScale) - sadd;
+                        qvtx[0].u = ((sx + xs) * tWScale) - sadd;
                     } else {
-                        qvtx[0].u= sadd + sx;
-                        qvtx[3].u= sadd + (sx + xs);
+                        qvtx[0].u = sadd + (sx * tWScale);
+                        qvtx[3].u = sadd + ((sx + xs) * tWScale);
                     }
 
                     if (flip & 2) {
-                        qvtx[3].v = sy - tadd;
-                        qvtx[0].v = (sy + ys) - tadd;
+                        qvtx[3].v = (sy * tHScale) - tadd;
+                        qvtx[0].v = ((sy + ys) * tHScale) - tadd;
                     } else {
-                        qvtx[0].v = tadd + sy;
-                        qvtx[3].v = tadd + (sy + ys);
+                        qvtx[0].v = tadd + (sy * tHScale);
+                        qvtx[3].v = tadd + ((sy + ys) * tHScale);
                     }
 
                     ppgWriteQuadOnly2(qvtx, col, texhan | (palhan << 0x10));
@@ -533,25 +502,25 @@ s32 ppgWriteQuadUseTrans(Vertex* pos, u32 col, PPGDataList* tb, s32 tix, s32 cix
     switch (flip) {
     case 0:
         pos[0].u = pos[0].v = 0.0f;
-        pos[3].u = ppgwf;
-        pos[3].v = ppghf;
+        pos[3].u = tWidth;
+        pos[3].v = tHeight;
         break;
 
     case 1:
         pos[3].u = pos[0].v = 0.0f;
-        pos[0].u = ppgwf;
-        pos[3].v = ppghf;
+        pos[0].u = tWidth;
+        pos[3].v = tHeight;
         break;
 
     case 2:
         pos[0].u = pos[3].v = 0.0f;
-        pos[3].u = ppgwf;
-        pos[0].v = ppghf;
+        pos[3].u = tWidth;
+        pos[0].v = tHeight;
         break;
 
     default:
-        pos[0].u = ppgwf;
-        pos[0].v = ppghf;
+        pos[0].u = tWidth;
+        pos[0].v = tHeight;
         pos[3].u = pos[3].v = 0.0f;
         break;
     }

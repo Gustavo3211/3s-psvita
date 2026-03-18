@@ -1596,8 +1596,8 @@ void seqsAfterProcess() {
             seqs_w.sprMax = seqs_w.sprTotal;
         }
 
-    if(DEMMA_DEBUG || skip_frame)
-            return;
+        if(DEMMA_DEBUG || skip_frame)
+                return;
 
         //ps2SeqsRenderQuadInit_A();
 
@@ -1609,12 +1609,9 @@ void seqsAfterProcess() {
         for (i = 0; i < seqs_w.sprTotal; i++) {
             if (seqs_w.up[seqs_w.chip[i].id]) {
                 val = seqs_w.chip[i].tex_code;
-
-                //vertices = (TextureVertex*)sceGuGetMemory(2 * sizeof(TextureVertex));
-                //static TextureVertex vertices[2];
                 tex = &flTexture[LO_16_BITS(val) - 1];
 
-                k = (i*2);
+                k = i << 1;
 
                 for (j = 0; j < 2; j++) {
                     vertices[j + k].x = seqs_w.chip[i].v[j].x;
@@ -1628,7 +1625,8 @@ void seqsAfterProcess() {
                 
                 //sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 2, 0, vertices);
                 if(val != val_temp){
-                    sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 2 * (i - w), 0, &vertices[w * 2]);
+                    if(val_temp != -1)
+                        sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, (i - w) << 1, 0, &vertices[w << 1]);
                     w = i;
                     val_temp = val;
                     flSetRenderState(FLRENDER_TEXSTAGE0, val);

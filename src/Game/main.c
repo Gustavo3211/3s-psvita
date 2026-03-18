@@ -215,6 +215,7 @@ void AcrMain() {
         if (Debug_w[6] == 0) {
             //CP3toPS2Draw();
             ppgDrawQuads();
+            quadOnly2DrawLast(-1);
         }
         njdp2d_draw_0();
 
