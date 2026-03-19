@@ -214,17 +214,14 @@ void AcrMain() {
 
         if (Debug_w[6] == 0) {
             //CP3toPS2Draw();
-            ppgDrawQuads();
-            quadOnly2DrawLast(-1);
         }
-        njdp2d_draw_0();
-
         
         //if(!DEMMA_DEBUG)
             //drawRect(c_x, c_y, 10, 10, 0xFFFFFFFF);
         
         //quadOnly2DrawLast(-1);
 
+        njdp2d_draw_0();
         render_end();
     
         sysinfodisp = 0;

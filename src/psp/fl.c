@@ -1298,7 +1298,8 @@ s32 flPS2ConvertTextureFromContext(plContext* lpcontext, FLTexture* lpflTexture,
         return 1;
 
     //if(lpflTexture->width == BG_BUFF_SIZE_X && lpflTexture->height == BG_BUFF_SIZE_Y && lpflTexture->format == GU_PSM_T8){
-    if(dst_ptr - base_ptr == BG_BUFF_SIZE_X * BG_BUFF_SIZE_Y){
+    //if(dst_ptr - base_ptr == BG_BUFF_SIZE_X * BG_BUFF_SIZE_Y){
+    if(dst_ptr - base_ptr == BG_BUFF_SIZE_X * BG_BUFF_SIZE_Y || dst_ptr - base_ptr == BG_BUFF_SIZE_X * BG_BUFF_SIZE_Y / 2 || dst_ptr - base_ptr == BG_BUFF_SIZE_X * BG_BUFF_SIZE_Y / 4){
         int i;
         for(i = 0; i < MAX_BG_BUFFER; i++){
             if(!bg_used[i])

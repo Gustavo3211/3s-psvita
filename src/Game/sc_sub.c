@@ -20,9 +20,9 @@
 #include "structs.h"
 
 
-#define TO_UV_256(val) ((val))
+#define TO_UV_256(val) ((val) / 256.0f)
 #define TO_UV_256_NEG(val) (TO_UV_256(val))
-#define TO_UV_128(val) ((val))
+#define TO_UV_128(val) ((val) / 128.0f)
 
 /// Trim values for ASCII characters (high nibble = left trim, low nibble = right trim)
 const u8 ascProData[128] = {

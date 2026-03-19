@@ -1580,14 +1580,21 @@ void seqsAfterProcess() {
     FLTexture *tex = &flTexture[LO_16_BITS(val) - 1];
 
     if ((Debug_w[0x27] != 3) && (seqs_w.sprTotal != 0)) {
-        for (i = 0; i < 24; i++) {
-            if (seqs_w.up[i]) {
-                if (Debug_w[0x22]) {
+        if (Debug_w[0x22]) {
+            for (i = 0; i < 24; i++) {
+                if (seqs_w.up[i]) {
                     if (ppgCheckTextureDataBe(mts[i].texList.tex) == 0) {
                         seqs_w.up[i] = 0;
                     }
-                } else if (ppgRenewTexChunkSeqs(mts[i].texList.tex) == 0) {
-                    seqs_w.up[i] = 0;
+                }
+            }
+        }
+        else {
+            for (i = 0; i < 24; i++) {
+                if (seqs_w.up[i]) {
+                    if (ppgRenewTexChunkSeqs(mts[i].texList.tex) == 0) {
+                        seqs_w.up[i] = 0;
+                    }
                 }
             }
         }
@@ -1599,44 +1606,42 @@ void seqsAfterProcess() {
         if(DEMMA_DEBUG || skip_frame)
                 return;
 
-        //ps2SeqsRenderQuadInit_A();
-
         vertices = (TextureVertex*)sceGuGetMemory(2 * seqs_w.sprTotal * sizeof(TextureVertex));
-        int k, j, w = 0;
-        //flSetRenderState(FLRENDER_TEXSTAGE0, val);
+        int k = 0, j, w = 0;
         u32 val_temp = -1;
 
+        Sprite2 *c;
+        Vec3 *vert;
+        TexCoord *tc;
+
         for (i = 0; i < seqs_w.sprTotal; i++) {
-            if (seqs_w.up[seqs_w.chip[i].id]) {
+            c = &seqs_w.chip[i];
+            if (seqs_w.up[c->id]) {
                 val = seqs_w.chip[i].tex_code;
+
                 tex = &flTexture[LO_16_BITS(val) - 1];
 
-                k = i << 1;
-
                 for (j = 0; j < 2; j++) {
-                    vertices[j + k].x = seqs_w.chip[i].v[j].x;
-                    vertices[j + k].y = seqs_w.chip[i].v[j].y;
-                    vertices[j + k].z = seqs_w.chip[i].v[j].z * 0xFFFF;
-                    vertices[j + k].u = (short) (seqs_w.chip[i].t[j].s);
-                    vertices[j + k].v = (short) (seqs_w.chip[i].t[j].t);
-                    vertices[j + k].colour = seqs_w.chip[i].vertex_color;
+                    vert = &c->v[j];
+                    tc = &c->t[j];
+                    vertices[j + k].x = vert->x;
+                    vertices[j + k].y = vert->y;
+                    vertices[j + k].z = vert->z * 0xFFFF;
+                    vertices[j + k].u = (short) (tc->s * tex->width);
+                    vertices[j + k].v = (short) (tc->t * tex->height);
+                    vertices[j + k].colour = c->vertex_color;
                 }
-                //ps2SeqsRenderQuad_Ax(&seqs_w.chip[i]);
-                
-                //sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 2, 0, vertices);
+
                 if(val != val_temp){
-                    if(val_temp != -1)
-                        sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, (i - w) << 1, 0, &vertices[w << 1]);
-                    w = i;
+                    sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, k - w, 0, &vertices[w]);
+                    w = k;
                     val_temp = val;
                     flSetRenderState(FLRENDER_TEXSTAGE0, val);
                 }
+                k += 2;
             }
         }
-        sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 2 * (i - w), 0, &vertices[w * 2]);
-        //sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 2 * seqs_w.sprTotal, 0, vertices);
-
-        //ps2SeqsRenderQuadEnd();
+        sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, k - w, 0, &vertices[w]);
     }
 }
 
@@ -1674,19 +1679,19 @@ s32 seqsStoreChip(f32 x, f32 y, s32 w, s32 h, s32 gix, s32 code, s32 attr, s32 a
     appRenewTempPriority_1_Chip();
 
     if (attr & 0x8000) {
-        chip->t[1].s = (u - dx);
-        chip->t[0].s = (u + w - dx);
+        chip->t[1].s = (u - dx) / 256.0f;
+        chip->t[0].s = (u + w - dx) / 256.0f;
     } else {
-        chip->t[0].s = (u + dx);
-        chip->t[1].s = (u + w + dx);
+        chip->t[0].s = (u + dx) / 256.0f;
+        chip->t[1].s = (u + w + dx) / 256.0f;
     }
 
     if (attr & 0x4000) {
-        chip->t[1].t = (v - dy);
-        chip->t[0].t = (v + h - dy);
+        chip->t[1].t = (v - dy) / 256.0f;
+        chip->t[0].t = (v + h - dy) / 256.0f;
     } else {
-        chip->t[0].t = (v + dy);
-        chip->t[1].t = (v + h + dy);
+        chip->t[0].t = (v + dy) / 256.0f;
+        chip->t[1].t = (v + h + dy) / 256.0f;
     }
 
     chip->tex_code |= ppgGetUsingPaletteHandle(NULL, attr & 0x1FF) << 16;
