@@ -4,7 +4,7 @@ $ mkdir build
 $ cd build
 $ make
 
-then extract the files on SF33RD.AFS and place them in resources/ next to the EBOOT
+you'll need SF33RD.AFS (3sx extracts it from the iso), extract the files (AFSPacker is what i use), and place them in a folder named "resources" next to the EBOOT
 
 CONFIGS:
 -press start at boot to disable backgrounds
