@@ -1624,16 +1624,16 @@ void seqsAfterProcess() {
                 for (j = 0; j < 2; j++) {
                     vert = &c->v[j];
                     tc = &c->t[j];
-                    vertices[j + k].x = vert->x;
-                    vertices[j + k].y = vert->y;
+                    vertices[j + k].x = vert->x * Frame_Zoom_X + Frame_Off_X;
+                    vertices[j + k].y = vert->y * Frame_Zoom_Y + Frame_Off_Y;
                     vertices[j + k].z = vert->z * 0xFFFF;
-                    vertices[j + k].u = (short) (tc->s * tex->width);
-                    vertices[j + k].v = (short) (tc->t * tex->height);
+                    vertices[j + k].u = tc->s * tex->width;
+                    vertices[j + k].v = tc->t * tex->height;
                     vertices[j + k].colour = c->vertex_color;
                 }
 
                 if(val != val_temp){
-                    sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, k - w, 0, &vertices[w]);
+                    sceGuDrawArray(GU_SPRITES, GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, k - w, 0, &vertices[w]);
                     w = k;
                     val_temp = val;
                     flSetRenderState(FLRENDER_TEXSTAGE0, val);
@@ -1641,7 +1641,7 @@ void seqsAfterProcess() {
                 k += 2;
             }
         }
-        sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, k - w, 0, &vertices[w]);
+        sceGuDrawArray(GU_SPRITES, GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, k - w, 0, &vertices[w]);
     }
 }
 

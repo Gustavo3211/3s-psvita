@@ -1083,6 +1083,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/3rd-strike.dir/src/psp/PPGFile.c.obj.d"
   "CMakeFiles/3rd-strike.dir/src/psp/PPGWork.c.obj"
   "CMakeFiles/3rd-strike.dir/src/psp/PPGWork.c.obj.d"
+  "CMakeFiles/3rd-strike.dir/src/psp/at3.c.obj"
+  "CMakeFiles/3rd-strike.dir/src/psp/at3.c.obj.d"
   "CMakeFiles/3rd-strike.dir/src/psp/common.c.obj"
   "CMakeFiles/3rd-strike.dir/src/psp/common.c.obj.d"
   "CMakeFiles/3rd-strike.dir/src/psp/files.c.obj"

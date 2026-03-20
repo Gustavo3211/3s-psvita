@@ -27,7 +27,7 @@ typedef struct {
 } TextureVertex;
  */
  typedef struct {
-    short u, v;
+    float u, v;
     uint32_t colour;
     float x, y, z;
 } TextureVertex;

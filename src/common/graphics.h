@@ -19,6 +19,13 @@
 extern "C" {
 #endif
 
+//variables
+extern float Frame_Zoom_X;
+extern float Frame_Off_X;
+extern float Frame_Zoom_Y;
+extern float Frame_Off_Y;
+
+
 // functions
 void initGu();
 void endGu();

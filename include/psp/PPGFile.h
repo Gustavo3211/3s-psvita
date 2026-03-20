@@ -20,11 +20,6 @@ extern s32 currentPalette;
 extern s16* dctex_linear; // size: 0x4, address: 0x57A950
 extern PPG_W ppg_w;
 
-extern TextureVertex *bg2_vertices;
-extern u32 bg2_tex;
-
-extern bool experimental_bg;
-
 void ppg_Initialize(void* lcmAdrs, s32 lcmSize);
 void ppgSourceDataReleased(PPGDataList* dlist);
 void ppgSetupCurrentDataList(PPGDataList* dlist);

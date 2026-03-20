@@ -2277,10 +2277,10 @@ void dispButtonImage(s32 px, s32 py, s32 pz, s32 sx, s32 sy, s32 cl, s32 ix) {
     }
 
     setFilterMode(0);
-    vertices[0].x = px;
-    vertices[0].y = py;
-    vertices[1].x = (px + sx);
-    vertices[1].y = (py - sy);
+    vertices[0].x = px * Frame_Zoom_X + Frame_Off_X;
+    vertices[0].y = py * Frame_Zoom_Y + Frame_Off_Y;
+    vertices[1].x = (px + sx) * Frame_Zoom_X + Frame_Off_X;
+    vertices[1].y = (py - sy) * Frame_Zoom_Y + Frame_Off_Y;
     for(int i = 0; i < 2; i++){
         vecs[i].x = vertices[i].x;
         vecs[i].y = vertices[i].y;
@@ -2292,15 +2292,15 @@ void dispButtonImage(s32 px, s32 py, s32 pz, s32 sx, s32 sy, s32 cl, s32 ix) {
         vertices[i].y = vecs[i].y;
     }
     vertices[0].z = vertices[1].z = PrioBase[pz] * 0xFFFF;
-    vertices[0].u = (short) ((scrnAddTex1UV[ix][0] / 256.0f) * tex->width);
-    vertices[1].u = (short) (((scrnAddTex1UV[ix][0] + scrnAddTex1UV[ix][2]) / 256.0f) * tex->width);
-    vertices[0].v = (short) ((scrnAddTex1UV[ix][1] / 128.0f) * tex->height);
-    vertices[1].v = (short) (((scrnAddTex1UV[ix][1] + scrnAddTex1UV[ix][3]) / 128.0f) * tex->height);
+    vertices[0].u = ((scrnAddTex1UV[ix][0] / 256.0f) * tex->width);
+    vertices[1].u = (((scrnAddTex1UV[ix][0] + scrnAddTex1UV[ix][2]) / 256.0f) * tex->width);
+    vertices[0].v = ((scrnAddTex1UV[ix][1] / 128.0f) * tex->height);
+    vertices[1].v = (((scrnAddTex1UV[ix][1] + scrnAddTex1UV[ix][3]) / 128.0f) * tex->height);
     vertices[0].colour = vertices[1].colour = 0xFFFFFFFF - (cl << 23);
 
     flSetRenderState(FLRENDER_TEXSTAGE0, texCode);
     
-    sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 2, 0, vertices);
+    sceGuDrawArray(GU_SPRITES, GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 2, 0, vertices);
 }
 
 void dispButtonImage2(s32 px, s32 py, s32 pz, s32 sx, s32 sy, s32 cl, s32 ix) {
@@ -2317,18 +2317,18 @@ void dispButtonImage2(s32 px, s32 py, s32 pz, s32 sx, s32 sy, s32 cl, s32 ix) {
     }
 
     setFilterMode(0);
-    vertices[0].x = px;
-    vertices[0].y = py;
-    vertices[1].x = (px + sx);
-    vertices[1].y = (py + sy);
+    vertices[0].x = px * Frame_Zoom_X + Frame_Off_X;
+    vertices[0].y = py * Frame_Zoom_Y + Frame_Off_Y;
+    vertices[1].x = (px + sx) * Frame_Zoom_X + Frame_Off_X;
+    vertices[1].y = (py + sy) * Frame_Zoom_Y + Frame_Off_Y;
     vertices[0].z = vertices[1].z = PrioBase[pz] * 0xFFFF;
-    vertices[0].u = (short) ((scrnAddTex1UV[ix][0] / 256.0f) * tex->width);
-    vertices[1].u = (short) (((scrnAddTex1UV[ix][0] + scrnAddTex1UV[ix][2]) / 256.0f) * tex->width);
-    vertices[0].v = (short) ((scrnAddTex1UV[ix][1] / 128.0f) * tex->height);
-    vertices[1].v = (short) (((scrnAddTex1UV[ix][1] + scrnAddTex1UV[ix][3]) / 128.0f) * tex->height);
+    vertices[0].u = ((scrnAddTex1UV[ix][0] / 256.0f) * tex->width);
+    vertices[1].u = (((scrnAddTex1UV[ix][0] + scrnAddTex1UV[ix][2]) / 256.0f) * tex->width);
+    vertices[0].v = ((scrnAddTex1UV[ix][1] / 128.0f) * tex->height);
+    vertices[1].v = (((scrnAddTex1UV[ix][1] + scrnAddTex1UV[ix][3]) / 128.0f) * tex->height);
     vertices[0].colour = vertices[1].colour = 0xFFFFFFFF - (cl << 24);
     flSetRenderState(FLRENDER_TEXSTAGE0, texCode);
-    sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 2, 0, vertices);
+    sceGuDrawArray(GU_SPRITES, GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 2, 0, vertices);
 }
 
 void dispSaveLoadTitle(void* ewk) {
@@ -2374,15 +2374,15 @@ void dispSaveLoadTitle(void* ewk) {
         njCalcPoint(NULL, &pos[1], &pos[3]);
 
         for(j = 0; j < 2; j++){
-            vertices[j * 3].x = pos[j + 2].x;
-            vertices[j * 3].y = pos[j + 2].y;
+            vertices[j * 3].x = pos[j + 2].x * Frame_Zoom_X + Frame_Off_X;
+            vertices[j * 3].y = pos[j + 2].y * Frame_Zoom_Y + Frame_Off_Y;
             vertices[j * 3].z = pos[j + 2].z * 0xFFFF;
         }
 
-        sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 2, 0, vertices);
+        sceGuDrawArray(GU_SPRITES, GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 2, 0, vertices);
         step_t += 36.0f;
         vertices[0].v = vertices[3].v;
-        vertices[3].v = (short) step_t / 128.0f * tex->height;
+        vertices[3].v = step_t / 128.0f * tex->height;
         pos[0].x += 128.0f;
         pos[1].x += 128.0f;
     }

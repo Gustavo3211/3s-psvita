@@ -93,9 +93,6 @@ void AcrMain() {
     if(p1sw_buff & 0x4000){
         Debug_w[DEBUG_BG_DRAW_OFF] = 1;
     }
-    if(p1sw_buff & 0x8000){
-        experimental_bg = 1;
-    }
     if(p1sw_buff & 0x0001){
         fps_30 = 1;
     }
@@ -199,8 +196,6 @@ void AcrMain() {
         appCopyKeyData();
 
         render_start();
-        
-        bg2_vertices = NULL;
 
         mpp_w.inGame = 0;
 
@@ -215,11 +210,10 @@ void AcrMain() {
         if (Debug_w[6] == 0) {
             //CP3toPS2Draw();
         }
+        quadOnly2DrawLast(-1);
         
         //if(!DEMMA_DEBUG)
             //drawRect(c_x, c_y, 10, 10, 0xFFFFFFFF);
-        
-        //quadOnly2DrawLast(-1);
 
         njdp2d_draw_0();
         render_end();

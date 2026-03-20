@@ -41,14 +41,6 @@ const u8 pplColorModeWidth[4] = { 0xF, 0x3F, 0xFF, 0 };
 PPG_W ppg_w;
 s16* dctex_linear;
 
-#define BG2_MAX 1024
-TextureVertex *bg2_vertices = NULL;
-u32 bg2_i = 0;
-u32 bg2_s = 0;
-u32 bg2_tex = -1;
-
-bool experimental_bg = false;
-
 s32 ppgCheckPaletteDataBe(Palette* pch);
 void ppgWriteQuadOnly(Vertex* pos, u32 col, u32 texCode);
 void ppgWriteQuadOnly2(Vertex* pos, u32 col, u32 texCode);
@@ -147,27 +139,33 @@ s32 ppgWriteQuadWithST_A2(Vertex* pos, u32 col) {
 }
 
 void ppgWriteQuadOnly(Vertex* pos, u32 col, u32 texCode) {
+    TextureVertex *vertices;
+    int texture_handle;
+    FLTexture *tex;
+    s32 i;
+    f32 w_f, h_f;
 
     if(DEMMA_DEBUG || skip_frame)
         return;
 
-    TextureVertex *vertices = (TextureVertex*)sceGuGetMemory(4 * sizeof(TextureVertex));
-    //static TextureVertex vertices[4];
-    int texture_handle = LO_16_BITS(texCode) - 1;
-    FLTexture *tex = &flTexture[texture_handle];
-    s32 i;
+    vertices = (TextureVertex*)sceGuGetMemory(4 * sizeof(TextureVertex));
+    texture_handle = LO_16_BITS(texCode) - 1;
+    tex = &flTexture[texture_handle];
+
+    w_f = (float) tex->width;
+    h_f = (float) tex->height;
 
     for (i = 0; i < 4; i++) {
-        vertices[i].x = pos[i].x;
-        vertices[i].y = pos[i].y;
+        vertices[i].x = pos[i].x * Frame_Zoom_X + Frame_Off_X;
+        vertices[i].y = pos[i].y * Frame_Zoom_Y + Frame_Off_Y;
         vertices[i].z = pos[i].z * 0xFFFF;
-        vertices[i].u = (short) (pos[i].u * tex->width);
-        vertices[i].v = (short) (pos[i].v * tex->height);
+        vertices[i].u = pos[i].u * w_f;
+        vertices[i].v = pos[i].v * h_f;
         vertices[i].colour = col;
     }
 
     flSetRenderState(FLRENDER_TEXSTAGE0, texCode);
-    sceGuDrawArray(GU_TRIANGLE_STRIP, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 4, 0, vertices);
+    sceGuDrawArray(GU_TRIANGLE_STRIP, GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 4, 0, vertices);
 }
 
 void ppgWriteQuadOnly2(Vertex* pos, u32 col, u32 texCode) {
@@ -175,23 +173,53 @@ void ppgWriteQuadOnly2(Vertex* pos, u32 col, u32 texCode) {
     if(DEMMA_DEBUG || skip_frame)
         return;
 
+    //quadOnly2DrawLast(texCode);
+
     TextureVertex *vertices = sceGuGetMemory(2 * sizeof(TextureVertex));
     int texture_handle = LO_16_BITS(texCode) - 1;
     FLTexture *tex = &flTexture[texture_handle];
     s32 i;
 
+    f32 w_f = (float) tex->width;
+    f32 h_f = (float) tex->height;
+
     for (i = 0; i < 2; i++) {
-        vertices[i].x = pos[i*3].x;
-        vertices[i].y = pos[i*3].y;
+        vertices[i].x = pos[i*3].x * Frame_Zoom_X + Frame_Off_X;
+        vertices[i].y = pos[i*3].y * Frame_Zoom_Y + Frame_Off_Y;
         vertices[i].z = pos[i*3].z  * 0xFFFF;
-        vertices[i].u = (short) (pos[i*3].u * tex->width);
-        vertices[i].v = (short) (pos[i*3].v * tex->height);
+        vertices[i].u = pos[i*3].u * w_f;
+        vertices[i].v = pos[i*3].v * h_f;
         vertices[i].colour = col;
     }
 
     flSetRenderState(FLRENDER_TEXSTAGE0, texCode);
-    sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 2, 0, vertices);
+    sceGuDrawArray(GU_SPRITES, GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 2, 0, vertices);
 }
+
+void ppgWriteQuadOnly2T(Vertex* pos, u32 col, u32 texCode, TextureVertex *vertices) {
+
+    if(DEMMA_DEBUG || skip_frame)
+        return;
+
+    //quadOnly2DrawLast(texCode);
+
+    int texture_handle = LO_16_BITS(texCode) - 1;
+    FLTexture *tex = &flTexture[texture_handle];
+    s32 i;
+
+    f32 w_f = (float) tex->width;
+    f32 h_f = (float) tex->height;
+
+    for (i = 0; i < 2; i++) {
+        vertices[i].x = pos[i*3].x * Frame_Zoom_X + Frame_Off_X;
+        vertices[i].y = pos[i*3].y * Frame_Zoom_Y + Frame_Off_Y;
+        vertices[i].z = pos[i*3].z  * 0xFFFF;
+        vertices[i].u = pos[i*3].u * w_f;
+        vertices[i].v = pos[i*3].v * h_f;
+        vertices[i].colour = col;
+    }
+}
+
 
 void quadOnly2DrawLast(u32 texCode){
 }
@@ -345,6 +373,11 @@ s32 ppgWriteQuadUseTrans(Vertex* pos, u32 col, PPGDataList* tb, s32 tix, s32 cix
             qvtx[0].z = pos[0].z;
             qvtx[3].z = pos[3].z;
 
+            TextureVertex *vertices = sceGuGetMemory(2 * transTotal * sizeof(TextureVertex));
+            u32 v_i = 0, v_s = 0;
+            u32 tex_temp = -1;
+            u32 texCode;
+
             for (i = 0; i < transTotal; i++) {
                 if (ix_ofs & 0x4000) {
                     palhan = phan[*tran + pal];
@@ -374,6 +407,17 @@ s32 ppgWriteQuadUseTrans(Vertex* pos, u32 col, PPGDataList* tb, s32 tix, s32 cix
                     qvtx[3].y = pos->y + (pys * (sy + ys) / ppghf);
                 }
 
+                texCode = texhan | (palhan << 0x10);
+
+                if(texCode != tex_temp){
+                    if(v_i > v_s){
+                        flSetRenderState(FLRENDER_TEXSTAGE0, tex_temp);
+                        sceGuDrawArray(GU_SPRITES, GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, v_i - v_s, 0, &vertices[v_s]);
+                    }
+                    v_s = v_i;
+                    tex_temp = texCode;
+                }
+
                 if ((qvtx[0].x < 384.0f) && (qvtx[3].x >= 0.0f) && (qvtx[0].y < 224.0f) && (qvtx[3].y >= 0.0f)) {
                     if (flip & 1) {
                         qvtx[3].u = (sx / ppgwf) - sadd;
@@ -391,8 +435,13 @@ s32 ppgWriteQuadUseTrans(Vertex* pos, u32 col, PPGDataList* tb, s32 tix, s32 cix
                         qvtx[3].v = tadd + ((sy + ys) / ppghf);
                     }
 
-                    ppgWriteQuadOnly2(qvtx, col, texhan | (palhan << 0x10));
+                    ppgWriteQuadOnly2T(qvtx, col, texhan | (palhan << 0x10), &vertices[v_i]);
+                    v_i += 2;
                 }
+            }
+            if(v_i > v_s){
+                flSetRenderState(FLRENDER_TEXSTAGE0, texCode);
+                sceGuDrawArray(GU_SPRITES, GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, v_i - v_s, 0, &vertices[v_s]);
             }
 
             return 1;
@@ -442,12 +491,7 @@ ssize_t ppgDecompress(s32 koCmpr, void* srcAdrs, s32 srcSize, void* dstAdrs, s32
     switch (koCmpr) {
     default:
         if (srcAdrs != dstAdrs) {
-            src = srcAdrs;
-            dst = dstAdrs;
-
-            for (i = 0; i < dstSize; i++) {
-                *dst++ = *src++;
-            }
+            memcpy(dstAdrs, srcAdrs, dstSize);
         }
 
         rnum = srcSize;

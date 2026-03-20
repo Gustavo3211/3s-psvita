@@ -1,4 +1,9 @@
 #include "graphics.h"
+#include "sprites.h"
+
+
+//just for this project
+#include "Game/WORK_SYS.h"
 
 // variables
 static unsigned int __attribute__((aligned(64))) list[0x20000];
@@ -11,6 +16,15 @@ static void * zBuff;
 static uint32_t bg_color = 0xFF000000;
 
 int my_gu_init = 0;
+
+//float Frame_Zoom_X = 1.14f;
+//float Frame_Off_X = 16.4f;
+//float Frame_Zoom_Y = 1.235f;
+//float Frame_Off_Y = 0.0f;
+float Frame_Zoom_X = 1.0f;
+float Frame_Off_X = 38.0f;
+float Frame_Zoom_Y = 1.0f;
+float Frame_Off_Y = 20.0f;
 
 void initGu(){
     sceGuInit();
@@ -45,10 +59,10 @@ void initGu(){
     //Set up viewport
     sceGuOffset(2048 - (SCREEN_WIDTH / 2) + 10, 2048 - (SCREEN_HEIGHT / 2) + 10);
     //sceGuOffset(2048 - (SCREEN_WIDTH / 2) + 7, 2048 - (SCREEN_HEIGHT / 2));
-    //sceGuViewport(2048, 2048, SCREEN_WIDTH, SCREEN_HEIGHT);
-    sceGuViewport(2048, 2048, 384, 224);
-    //sceGuScissor(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-    sceGuScissor(0, 0, 384, 224);
+    sceGuViewport(2048, 2048, SCREEN_WIDTH, SCREEN_HEIGHT);
+    //sceGuViewport(2048, 2048, 384, 224);
+    sceGuScissor(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    //sceGuScissor(0, 0, 384, 224);
     sceGuEnable(GU_SCISSOR_TEST);
     //sceGuDisable(GU_SCISSOR_TEST);
 
@@ -81,8 +95,16 @@ void startFrame(){
     sceGuClearDepth(0xFFFF);
     sceGuDisable(GU_SCISSOR_TEST);
     sceGuClear(GU_COLOR_BUFFER_BIT | GU_DEPTH_BUFFER_BIT);
+    sceGuScissor(Frame_Off_X, Frame_Off_Y - 16, 384 * Frame_Zoom_X, 224 * Frame_Zoom_Y + 24);
     sceGuEnable(GU_SCISSOR_TEST);
     sceGuEnable(GU_TEXTURE_2D);
+
+    if(sys_w.screen_mode){
+        sceGuTexFilter(GU_NEAREST, GU_NEAREST);
+    }
+    else{
+        sceGuTexFilter(GU_LINEAR, GU_LINEAR);
+    }
 }
 
 void endFrame(){
