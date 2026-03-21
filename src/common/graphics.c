@@ -22,7 +22,7 @@ int my_gu_init = 0;
 //float Frame_Zoom_Y = 1.235f;
 //float Frame_Off_Y = 0.0f;
 float Frame_Zoom_X = 1.0f;
-float Frame_Off_X = 38.0f;
+float Frame_Off_X = 48.0f;
 float Frame_Zoom_Y = 1.0f;
 float Frame_Off_Y = 20.0f;
 

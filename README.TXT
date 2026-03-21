@@ -11,6 +11,9 @@ CONFIGS:
 
 TO-DO:
 
+src/Game/texcash.c:
+-modify MTSBase mts_base, life16 and life32 so it doesn't slow down with certain animations
+
 src/Game/PPGFile.c:
 -remove and fix the u * tex->width, v * tex->height
 -fix ppgWriteQuadUseTrans
