@@ -2460,4 +2460,169 @@ typedef union {
     } o;
 } SEA_WORK;
 
+// ── New sound system types (CSE / CapSndEng) ─────────────────────
+
+/* SoundRequestData — used by the new sound3rd.c lookup-based dispatch.
+   Same layout as SoundPatchConfig but aliased for clarity. */
+typedef struct {
+    s16 ptix;
+    s16 bank;
+    s16 port;
+    s16 code;
+} SoundRequestData;
+
+/* CSE_REQP — sound request parameters, from PS2 CSELIB00.IRX */
+typedef struct {
+    u8 cmd;
+    u8 flags;
+    u8 prog;
+    u8 note;
+    u8 attr;
+    u8 vol;
+    u8 pan;
+    u8 bank;
+    s16 pitch;
+    u8 prio;
+    u8 id1;
+    u8 id2;
+    u8 _pad0;
+    u32 kofftime;
+    u8 limit;
+    u8 _pad1;
+    u32 guid;
+} CSE_REQP;
+
+/* CSE_PHDP — calculated PHD playback parameters */
+typedef struct {
+    u8 vol;
+    u8 pan;
+    s16 pitch;
+    s16 bendLow;
+    s16 bendHigh;
+    u16 adsr1;
+    u16 adsr2;
+    u32 s_addr;
+    u32 freq;
+} CSE_PHDP;
+
+/* PS2 PHD file chunk structures — used by emlRefPhd.c */
+typedef struct {
+    u32 tag;
+    u32 chunkSize;
+    u32 version;
+    u32 headerSize;
+    u32 bodySize;
+    u32 progChunkOffset;
+    u32 smplChunkOffset;
+    u32 vagiChunkOffset;
+} _ps2_head_chunk;
+
+typedef struct {
+    s8 vol;
+    s8 pan;
+    s16 trans;
+    s16 fine;
+    u8 nSplit;
+    u8 _pad;
+} _ps2_prog_param_hdr;
+
+/* Note: _ps2_prog_param_hdr kept for backwards compat but _ps2_prog_param below is the real one */
+
+typedef union {
+    u8 core_0;
+    u8 core_1;
+    u8 core;
+} _ps2_effect;
+
+typedef struct {
+    u8 prio;
+    _ps2_effect effect;
+    u8 lowKey;
+    u8 highKey;
+    u16 bendLow;
+    u16 bendHigh;
+    s8 vol;
+    s8 pan;
+    s8 trans;
+    s8 fine;
+    u16 sampleIndex;
+} _ps2_split_block;
+
+typedef struct {
+    u8 nSplit;
+    _ps2_effect effect;
+    s8 vol;
+    s8 pan;
+    s8 trans;
+    s8 fine;
+    u16 reserved;
+    _ps2_split_block splitBlock[0];
+} _ps2_prog_param;
+
+typedef struct {
+    u32 tag;
+    u32 chunkSize;
+    u32 maxProgNum;
+    u32 reserved;
+    u32 progParamOffset[0];
+} _ps2_prog_chunk;
+
+typedef struct {
+    u16 ADSR1;
+    u16 ADSR2;
+    _ps2_effect effect;
+    u8 base;
+    s8 vol;
+    s8 pan;
+    s8 trans;
+    s8 fine;
+    u16 vagiIndex;
+} _ps2_smpl_param;
+
+typedef struct {
+    u32 tag;
+    u32 chunkSize;
+    u32 maxSmplNum;
+    u32 reserved;
+    _ps2_smpl_param smplParam[0];
+} _ps2_smpl_chunk;
+
+typedef struct {
+    u32 vagOffset;
+    u32 vagSize;
+    s32 loopFlag;
+    s32 sampleRate;
+} _ps2_vagi_param;
+
+typedef struct {
+    u32 tag;
+    u32 chunkSize;
+    u32 maxVagInfoNum;
+    u32 reserved;
+    _ps2_vagi_param vagiParam[0];
+} _ps2_vagi_chunk;
+
+/* CSE_PHDPADDR — pointers into parsed PHD chunks */
+typedef struct {
+    _ps2_prog_param* pPprm;
+    _ps2_split_block* pSblk;
+    _ps2_smpl_param* pSprm;
+    _ps2_vagi_param* pVprm;
+} CSE_PHDPADDR;
+
+/* CSE_ECHOWORK — echo (repeated playback with decay) work slot */
+typedef struct {
+    u8 BeFlag;
+    u8 _pad;
+    u16 Bank;
+    u16 Code;
+    u16 Interval;
+    u16 CurrInterval;
+    u16 Times;
+    u16 CurrTimes;
+    s16 VolDec1st;
+    s16 VolDec;
+    s32 Rtpc[10];
+} CSE_ECHOWORK;
+
 #endif

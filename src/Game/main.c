@@ -1,5 +1,6 @@
 #include "Game/main.h"
 #include "common.h"
+#include "psp/adx.h"
 /*
 #include "sf33rd/AcrSDK/ps2/flps2debug.h"
 #include "sf33rd/AcrSDK/ps2/flps2etc.h"
@@ -39,7 +40,6 @@
 #include "structs.h"
 
 #include <memory.h>
-
 int DEMMA_DEBUG = 0;
 
 // sbss
@@ -65,7 +65,7 @@ bool fps_30 = 0;
 void AcrMain() {
     u16 sw_buff;
     u32 sysinfodisp;
-    DEMMA_DEBUG = 1;
+    DEMMA_DEBUG = 0;
 
     flInitialize(0, 0);
     flSetRenderState(FLRENDER_BACKCOLOR, 0);
@@ -114,7 +114,6 @@ void AcrMain() {
         appViewMatrix();
         //flAdjustScreen(X_Adjust + Correct_X[0], Y_Adjust + Correct_Y[0]);
         setBackGroundColor(0xFF000000);
-        //setBackGroundColor(0xFFFF0000);
 
         if (Debug_w[0x43]) {
             setBackGroundColor(0xFF0000FF);
@@ -252,6 +251,7 @@ void AcrMain() {
         Irl_Family();
         Irl_Scrn();
         BGM_Server();
+        adxUpdate();
 
         c_x += c_v_x;
         c_y += c_v_y;
@@ -337,6 +337,9 @@ u8* mppMalloc(u32 size) {
 void njUserInit() {
     s32 i;
     u32 size;
+
+    // Init AFS archive before anything tries to load files
+    Setup_Directory_Record_Data();
 
     sysFF = 1;
     mpp_w.sysStop = false;

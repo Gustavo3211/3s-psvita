@@ -3,6 +3,8 @@
 
 #include "common/audio.h"
 #include "common/graphics.h"
+#include "psp/adx.h"
+#include <pspaudiolib.h>
 
 #include "Game/main.h"
 
@@ -10,6 +12,8 @@
 PSP_MODULE_INFO("3rd-strike", 0, 5, 1);
 //PSP_MAIN_THREAD_ATTR(PSP_THREAD_ATTR_VFPU | PSP_THREAD_ATTR_USER);
 PSP_MAIN_THREAD_ATTR(PSP_THREAD_ATTR_VFPU | PSP_THREAD_ATTR_USER);
+PSP_HEAP_SIZE_KB(-1024);
+PSP_HEAP_THRESHOLD_SIZE_KB(1024);
 
 // global variables
 
@@ -36,12 +40,13 @@ int main(void)  {
     // Use above functions to make exiting possible
     setup_callbacks();
 
-    //scePowerSetClockFrequency(333, 333, 166);
-    scePowerSetClockFrequency(300, 300, 150);
+    scePowerSetClockFrequency(333, 333, 166);
 
     initGu();
 
-    initMusic();
+    pspAudioInit();  // Init pspaudiolib with NULL callbacks (silence)
+    // SPU_Init sets channel 0 callback for SFX
+    // ADX uses sceAudioChReserve for BGM on a separate channel
 
     AcrMain();
 

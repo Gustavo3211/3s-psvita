@@ -17,6 +17,10 @@ file(GLOB Lz77C src/Compress/Lz77/*.c)
 file(GLOB zlibC src/Compress/zlib/*.c)
 
 file(GLOB portC src/port/*.c)
+file(GLOB portSoundC src/port/sound/*.c)
+file(GLOB gameSoundC src/Game/sound/*.c)
+file(GLOB acrSndC src/sf33rd/AcrSDK/MiddleWare/PS2/CapSndEng/*.c)
+file(GLOB cseDataC src/sf33rd/Source/PS2/cseDataFiles/*.c)
 
 add_executable(${PROJECT_NAME}
 	${pspC}
@@ -30,12 +34,20 @@ add_executable(${PROJECT_NAME}
     ${Lz77C}
     ${zlibC}
     ${portC}
+    ${portSoundC}
+    ${gameSoundC}
+    ${acrSndC}
+    ${cseDataC}
 )
 
 target_include_directories(
     ${PROJECT_NAME} PRIVATE src
     ${PROJECT_NAME} PRIVATE include
     ${PROJECT_NAME} PRIVATE include/Compress/zlib
+    ${PROJECT_NAME} PRIVATE include/port/sound
+    ${PROJECT_NAME} PRIVATE include/Game/sound
+    ${PROJECT_NAME} PRIVATE include/sf33rd/AcrSDK/MiddleWare/PS2/CapSndEng
+    ${PROJECT_NAME} PRIVATE include/sf33rd/Source/PS2/cseDataFiles
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
@@ -49,6 +61,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     pspaudio
     pspaudiolib
     pspatrac3
+    m
 )
 
 # from 3sx CMakeLists
@@ -76,6 +89,7 @@ set(DISABLED_WARNINGS
 
 target_compile_options(${PROJECT_NAME}  PRIVATE
     -Wall
+    -O3 -ffast-math
 
     -fno-strict-aliasing
 

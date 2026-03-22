@@ -1,5 +1,6 @@
 #include "Game/SYS_sub.h"
 #include "common.h"
+#include <pspdisplay.h>
 #include "AcrSDK/common/mlPAD.h"
 //#include "sf33rd/AcrSDK/ps2/flps2debug.h"
 #include "fl.h"
@@ -978,7 +979,7 @@ bool Cut_Cut_Loser() {
 }
 
 void njWaitVSync_with_N() {
-    while (1) {}
+    sceDisplayWaitVblankStart();
 }
 
 void Soft_Reset_Sub() {

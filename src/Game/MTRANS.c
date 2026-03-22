@@ -1,5 +1,6 @@
 #include "Game/MTRANS.h"
 #include "common.h"
+#include "common/graphics.h"
 //#include "sf33rd/AcrSDK/ps2/flps2render.h"
 //#include "sf33rd/AcrSDK/ps2/foundaps2.h"
 #include "fl.h"
@@ -172,7 +173,7 @@ void mlt_obj_disp(MultiTexture* mt, WORK* wk, s32 base_y) {
     if (texgrplds[i].ok == 0) {
         // The trans data is not valid. Group number: %d\n
         flLogOut("disp The trans data is not valid. Group number: %d\n", i);
-        while (1) {}
+        return;
     }
 
     n -= texgrpdat[i].num_of_1st;
@@ -273,7 +274,7 @@ void mlt_obj_disp_rgb(MultiTexture* mt, WORK* wk, s32 base_y) {
     if (texgrplds[i].ok == 0) {
         // The trans data is not valid. Group number: %d\n
         flLogOut("disp_rgb The trans data is not valid. Group number: %d\n", i);
-        while (1) {}
+        return;
     }
 
     n -= texgrpdat[i].num_of_1st;
@@ -413,7 +414,7 @@ void mlt_obj_trans_ext(MultiTexture* mt, WORK* wk, s32 base_y) {
     if (texgrplds[i].ok == 0) {
         // The trans data is not valid. Group number: %d\n
         flLogOut("_ext The trans data is not valid. Group number: %d\n", i);
-        while (1) {}
+        return;
     }
 
     n -= texgrpdat[i].num_of_1st;
@@ -661,7 +662,7 @@ void mlt_obj_trans(MultiTexture* mt, WORK* wk, s32 base_y) {
     if (texgrplds[i].ok == 0) {
         // The trans data is not valid. Group number: %d\n
         flLogOut("_ The trans data is not valid. Group number: %d\n", i);
-        while (1) {}
+        return;
     }
 
     n -= texgrpdat[i].num_of_1st;
@@ -786,7 +787,7 @@ void mlt_obj_trans_cp3_ext(MultiTexture* mt, WORK* wk, s32 base_y) {
     if (texgrplds[i].ok == 0) {
         // The trans data is not valid. Group number: %d\n
         flLogOut("cp3_ext The trans data is not valid. Group number: %d\n", i);
-        while (1) {}
+        return;
     }
 
     n -= texgrpdat[i].num_of_1st;
@@ -1046,7 +1047,7 @@ void mlt_obj_trans_cp3(MultiTexture* mt, WORK* wk, s32 base_y) {
     if (texgrplds[i].ok == 0) {
         // The trans data is not valid. Group number: %d\n
         flLogOut("cp3 The trans data is not valid. Group number: %d\n", i);
-        while (1) {}
+        return;
     }
 
     n -= texgrpdat[i].num_of_1st;
@@ -1176,7 +1177,7 @@ void mlt_obj_trans_rgb_ext(MultiTexture* mt, WORK* wk, s32 base_y) {
     if (texgrplds[i].ok == 0) {
         // The trans data is not valid. Group number: %d\n
         flLogOut("rgb_ext The trans data is not valid. Group number: %d\n", i);
-        while (1) {}
+        return;
     }
 
     n -= texgrpdat[i].num_of_1st;
@@ -1414,7 +1415,7 @@ void mlt_obj_trans_rgb(MultiTexture* mt, WORK* wk, s32 base_y) {
     if (texgrplds[i].ok == 0) {
         // The trans data is not valid. Group number: %d\n
         flLogOut("rgb The trans data is not valid. Group number: %d\n", i);
-        while (1) {}
+        return;
     }
 
     n -= texgrpdat[i].num_of_1st;
@@ -1624,8 +1625,8 @@ void seqsAfterProcess() {
                 for (j = 0; j < 2; j++) {
                     vert = &c->v[j];
                     tc = &c->t[j];
-                    vertices[j + k].x = vert->x * Frame_Zoom_X + Frame_Off_X;
-                    vertices[j + k].y = vert->y * Frame_Zoom_Y + Frame_Off_Y;
+                    vertices[j + k].x = SCALE_X(vert->x);
+                    vertices[j + k].y = SCALE_Y(vert->y);
                     vertices[j + k].z = vert->z * 0xFFFF;
                     vertices[j + k].u = tc->s * tex->width;
                     vertices[j + k].v = tc->t * tex->height;
@@ -1702,7 +1703,7 @@ s32 seqsStoreChip(f32 x, f32 y, s32 w, s32 h, s32 gix, s32 code, s32 attr, s32 a
     if (seqs_w.sprTotal > 0x400) {
         // The number of OBJ fragments has exceeded the planned number
         flLogOut("The number of OBJ fragments has exceeded the planned number\n");
-        while (1) {}
+        return -1;
     }
 
     return 1;
@@ -1741,7 +1742,7 @@ static s32 get_mltbuf16(MultiTexture* mt, u32 code, u32 palt, s32* ret) {
 
             // CG cache is full. 16x16: %d\n
             flLogOut("CG cache is full. 16x16: %d\n", mt->id);
-            while (1) {}
+            return -1;
         }
     }
 }
@@ -1779,7 +1780,7 @@ static s32 get_mltbuf32(MultiTexture* mt, u32 code, u32 palt, s32* ret) {
 
             // CG cache is full. 32x32 : %d\n
             flLogOut("CG cache is full. 32x32 : %d\n", mt->id);
-            while (1) {}
+            return -1;
         }
     }
 }
@@ -1819,7 +1820,7 @@ static s32 get_mltbuf16_ext_2(MultiTexture* mt, u32 code, u32 palt, s32* ret, Pa
 
     // CG cache is full. x16 EXT2\n
     flLogOut("CG cache is full. x16 EXT2\n");
-    while (1) {}
+    return -1;
 }
 
 static s32 get_mltbuf32_ext_2(MultiTexture* mt, u32 code, u32 palt, s32* ret, PatternInstance* cp) {
@@ -1856,7 +1857,7 @@ static s32 get_mltbuf32_ext_2(MultiTexture* mt, u32 code, u32 palt, s32* ret, Pa
     }
 
     flLogOut("CG cache is full. x32 EXT2\n");
-    while (1) {}
+    return -1;
 }
 
 static s32 get_mltbuf16_ext(MultiTexture* mt, u32 code, u32 palt) {
@@ -1869,8 +1870,8 @@ static s32 get_mltbuf16_ext(MultiTexture* mt, u32 code, u32 palt) {
         }
     }
 
-    flLogOut("ＣＧ展開エラー　１６×１６\n");
-    while (1) {}
+    flLogOut("CG decompress error 16x16\n");
+    return -1;
 }
 
 static s32 get_mltbuf32_ext(MultiTexture* mt, u32 code, u32 palt) {
@@ -1883,8 +1884,8 @@ static s32 get_mltbuf32_ext(MultiTexture* mt, u32 code, u32 palt) {
         }
     }
 
-    flLogOut("ＣＧ展開エラー　３２×３２\n");
-    while (1) {}
+    flLogOut("CG decompress error 32x32\n");
+    return -1;
 }
 
 static u16 x16_mapping_set(PatternMap* map, s32 code) {
@@ -1972,8 +1973,8 @@ static s32 get_free_patcash_index(PatternCollection* padr) {
         }
     }
 
-    flLogOut("ＣＧキャッシュバッファが一杯になりました。\n");
-    while (1) {}
+    flLogOut("CG cache buffer is full\n");
+    return -1;
 }
 
 static void lz_ext_p6_fx(u8* srcptr, u8* dstptr, u32 len) {
@@ -2232,7 +2233,7 @@ void mlt_obj_melt2(MultiTexture* mt, u16 cg_number) {
     if (grplds->ok == 0) {
         // The trans data is not valid. Group number: %d\n
         flLogOut("melt2 The trans data is not valid. Group number: %d\n", obj_group_table[cg_number]);
-        while (1) {}
+        return;
     }
 
     n = *(u32*)grplds->trans_table / 4;

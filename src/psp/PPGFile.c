@@ -1,5 +1,6 @@
 #include "psp/PPGFile.h"
 #include "common.h"
+#include "common/graphics.h"
 
 #include "AcrSDK/common/plcommon.h"
 /*
@@ -156,8 +157,8 @@ void ppgWriteQuadOnly(Vertex* pos, u32 col, u32 texCode) {
     h_f = (float) tex->height;
 
     for (i = 0; i < 4; i++) {
-        vertices[i].x = pos[i].x * Frame_Zoom_X + Frame_Off_X;
-        vertices[i].y = pos[i].y * Frame_Zoom_Y + Frame_Off_Y;
+        vertices[i].x = SCALE_X(pos[i].x);
+        vertices[i].y = SCALE_Y(pos[i].y);
         vertices[i].z = pos[i].z * 0xFFFF;
         vertices[i].u = pos[i].u * w_f;
         vertices[i].v = pos[i].v * h_f;
@@ -184,8 +185,8 @@ void ppgWriteQuadOnly2(Vertex* pos, u32 col, u32 texCode) {
     f32 h_f = (float) tex->height;
 
     for (i = 0; i < 2; i++) {
-        vertices[i].x = pos[i*3].x * Frame_Zoom_X + Frame_Off_X;
-        vertices[i].y = pos[i*3].y * Frame_Zoom_Y + Frame_Off_Y;
+        vertices[i].x = SCALE_X(pos[i*3].x);
+        vertices[i].y = SCALE_Y(pos[i*3].y);
         vertices[i].z = pos[i*3].z  * 0xFFFF;
         vertices[i].u = pos[i*3].u * w_f;
         vertices[i].v = pos[i*3].v * h_f;
@@ -211,8 +212,8 @@ void ppgWriteQuadOnly2T(Vertex* pos, u32 col, u32 texCode, TextureVertex *vertic
     f32 h_f = (float) tex->height;
 
     for (i = 0; i < 2; i++) {
-        vertices[i].x = pos[i*3].x * Frame_Zoom_X + Frame_Off_X;
-        vertices[i].y = pos[i*3].y * Frame_Zoom_Y + Frame_Off_Y;
+        vertices[i].x = SCALE_X(pos[i*3].x);
+        vertices[i].y = SCALE_Y(pos[i*3].y);
         vertices[i].z = pos[i*3].z  * 0xFFFF;
         vertices[i].u = pos[i*3].u * w_f;
         vertices[i].v = pos[i*3].v * h_f;
@@ -755,7 +756,6 @@ error_handler:
 void ppgChangeDataEndian(u8* adrs, s32 size, s32 dendL, s32 col4, s32 depth, s32 excdot) {
     s32 i;
     u32* c4;
-    u16* c2;
 
     if (depth == 1) {
         return;
@@ -763,17 +763,17 @@ void ppgChangeDataEndian(u8* adrs, s32 size, s32 dendL, s32 col4, s32 depth, s32
 
     if (depth != 0) {
         if (dendL == 0) {
+            c4 = (u32*)adrs;
             if (col4 != 0) {
-                c4 = (u32*)adrs;
-
                 for (i = 0; i < size / 4; i++) {
-                    c4[i] = REVERT_U32(c4[i]);
+                    u32 v = c4[i];
+                    c4[i] = ((v & 0xFF) << 24) | ((v & 0xFF00) << 8) | ((v >> 8) & 0xFF00) | ((v >> 24) & 0xFF);
                 }
             } else {
-                c2 = (u16*)adrs;
-
-                for (i = 0; i < size / 2; i++) {
-                    c2[i] = REVERT_U16(c2[i]);
+                // Byte-swap pairs of u16 via u32: process 2 pixels per iteration
+                for (i = 0; i < size / 4; i++) {
+                    u32 v = c4[i];
+                    c4[i] = ((v >> 8) & 0x00FF00FF) | ((v << 8) & 0xFF00FF00);
                 }
             }
         }
@@ -782,8 +782,11 @@ void ppgChangeDataEndian(u8* adrs, s32 size, s32 dendL, s32 col4, s32 depth, s32
     }
 
     if (excdot != 0) {
-        for (i = 0; i < size; i++) {
-            adrs[i] = REVERT_U8(adrs[i]);
+        // Nibble-swap bytes: process 4 at a time via u32
+        c4 = (u32*)adrs;
+        for (i = 0; i < size / 4; i++) {
+            u32 v = c4[i];
+            c4[i] = ((v << 4) & 0xF0F0F0F0) | ((v >> 4) & 0x0F0F0F0F);
         }
     }
 }
@@ -829,9 +832,7 @@ s32 ppgSetupTexChunkSeqs(Texture* tch, PPGFileHeader* ppg, u8* adrs, s32 ixNum1s
     tch->srcAdrs = adrs;
     tch->srcSize = bits.pitch * bits.height;
 
-    for (i = 0; i < tch->srcSize * ixNums; i++) {
-        adrs[i] = 0;
-    }
+    memset(adrs, 0, tch->srcSize * ixNums);
 
     if (bits.bitdepth < 2) {
         ci_flag = 0x4000;
@@ -1054,17 +1055,9 @@ s32 ppgRenewTexChunkSeqs(Texture* tch) {
             tch->handle[i].b16[1] &= ~0x2000;
             srcRam = (s32*)(tch->srcAdrs + tch->srcSize * i);
 
-            /*
-            if (fastLockTexture(tch->handle[i].b16[0], &dst)) {
-                flTexture[tch->handle[i].b16[0]].wkVram = srcRam;
-                //memcpy(dst, srcRam, tch->srcSize);
-
-                // IMPORTANT: make GPU see it
-                sceKernelDcacheWritebackRange(tch->handle[i].b16[0]].wkVram, tch->srcSize);
-            }
-            */
             tex = &flTexture[tch->handle[i].b16[0] - 1];
             tex->wkVram = srcRam;
+            sceKernelDcacheWritebackRange(srcRam, tch->srcSize);
         }
     }
 

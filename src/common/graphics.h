@@ -14,6 +14,10 @@
 #define SCREEN_WIDTH 480
 #define SCREEN_HEIGHT 272
 
+// Native res centered — offset only, no scaling, no seams
+#define SCALE_X(x) ((x) + 48.0f)
+#define SCALE_Y(y) ((y) + 24.0f)
+
 // c++ guard
 #ifdef __cplusplus
 extern "C" {
@@ -33,6 +37,7 @@ void endGu();
 void startFrame();
 void endFrame();
 void endFrameDebug();
+void enableOffscreenMode();
 
 uint32_t getBgColor();
 void setBgColor(uint32_t color);

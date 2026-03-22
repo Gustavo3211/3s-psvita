@@ -1,7 +1,6 @@
 #include "graphics.h"
 #include "sprites.h"
 
-
 //just for this project
 #include "Game/WORK_SYS.h"
 
@@ -12,34 +11,29 @@ static void * fbp0;
 static void * fbp1;
 static void * zBuff;
 
-//variables
 static uint32_t bg_color = 0xFF000000;
 
 int my_gu_init = 0;
 
-//float Frame_Zoom_X = 1.14f;
-//float Frame_Off_X = 16.4f;
-//float Frame_Zoom_Y = 1.235f;
-//float Frame_Off_Y = 0.0f;
+// Keep at 1.0/0.0 — per-vertex SCALE_X/SCALE_Y handles fullscreen
 float Frame_Zoom_X = 1.0f;
-float Frame_Off_X = 48.0f;
+float Frame_Off_X = 0.0f;
 float Frame_Zoom_Y = 1.0f;
-float Frame_Off_Y = 20.0f;
+float Frame_Off_Y = 0.0f;
+
+void enableOffscreenMode() { }
 
 void initGu(){
     sceGuInit();
 
-	fbp0 = guGetStaticVramBuffer(BUFFER_WIDTH,SCREEN_HEIGHT,GU_PSM_8888);
-    fbp1 = guGetStaticVramBuffer(BUFFER_WIDTH,SCREEN_HEIGHT,GU_PSM_8888);
+    fbp0 = guGetStaticVramBuffer(BUFFER_WIDTH, SCREEN_HEIGHT, GU_PSM_8888);
+    fbp1 = guGetStaticVramBuffer(BUFFER_WIDTH, SCREEN_HEIGHT, GU_PSM_8888);
     zBuff = guGetStaticVramBuffer(BUFFER_WIDTH, SCREEN_HEIGHT, GU_PSM_4444);
 
-    //Set up buffers
     sceGuStart(GU_DIRECT, list);
     sceGuDrawBuffer(GU_PSM_8888, fbp0, BUFFER_WIDTH);
-    sceGuDispBuffer(SCREEN_WIDTH,SCREEN_HEIGHT,fbp1, BUFFER_WIDTH);
-    
-    // We do not care about the depth buffer in this example
-    //sceGuDepthBuffer(fbp0, 0); // Set depth buffer to a length of 0
+    sceGuDispBuffer(SCREEN_WIDTH, SCREEN_HEIGHT, fbp1, BUFFER_WIDTH);
+
     sceGuDepthBuffer(zBuff, BUFFER_WIDTH);
     sceGuEnable(GU_DEPTH_TEST);
     sceGuDepthFunc(GU_LEQUAL);
@@ -48,36 +42,26 @@ void initGu(){
     sceGuDisable(GU_LIGHTING);
     sceGuDisable(GU_CLIP_PLANES);
 
-    // alpha blending
     sceGuEnable(GU_BLEND);
     sceGuBlendFunc(GU_ADD, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, 0, 0);
-    //sceGuBlendFunc(GU_MAX, GU_SRC_ALPHA, GU_SRC_ALPHA, 0, 0);
 
     sceGuEnable(GU_ALPHA_TEST);
-    sceGuAlphaFunc(GU_GREATER, 0x00, 0xFF);  // Only draw pixels with alpha > 0
+    sceGuAlphaFunc(GU_GREATER, 0x00, 0xFF);
 
-    //Set up viewport
     sceGuOffset(2048 - (SCREEN_WIDTH / 2) + 10, 2048 - (SCREEN_HEIGHT / 2) + 10);
-    //sceGuOffset(2048 - (SCREEN_WIDTH / 2) + 7, 2048 - (SCREEN_HEIGHT / 2));
     sceGuViewport(2048, 2048, SCREEN_WIDTH, SCREEN_HEIGHT);
-    //sceGuViewport(2048, 2048, 384, 224);
     sceGuScissor(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-    //sceGuScissor(0, 0, 384, 224);
     sceGuEnable(GU_SCISSOR_TEST);
-    //sceGuDisable(GU_SCISSOR_TEST);
 
-    sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
-
-    // Start a new frame and enable the display
+    sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
+    sceGuTexFilter(GU_NEAREST, GU_NEAREST);
+    sceGuTexWrap(GU_CLAMP, GU_CLAMP);
     sceGuEnable(GU_TEXTURE_2D);
     sceGuFinish();
 
     sceGuSync(GU_SYNC_FINISH, GU_SYNC_WHAT_DONE);
     sceDisplayWaitVblankStart();
-
     sceGuDisplay(GU_TRUE);
-
-    sceGuTexFilter(GU_NEAREST, GU_NEAREST);
 
     my_gu_init = 1;
 }
@@ -85,26 +69,19 @@ void initGu(){
 void endGu(){
     sceGuDisplay(GU_FALSE);
     sceGuTerm();
-
     my_gu_init = 0;
 }
 
 void startFrame(){
     sceGuStart(GU_DIRECT, list);
-    sceGuClearColor(bg_color); // black background
+    sceGuClearColor(bg_color);
     sceGuClearDepth(0xFFFF);
     sceGuDisable(GU_SCISSOR_TEST);
     sceGuClear(GU_COLOR_BUFFER_BIT | GU_DEPTH_BUFFER_BIT);
-    sceGuScissor(Frame_Off_X, Frame_Off_Y - 16, 384 * Frame_Zoom_X, 224 * Frame_Zoom_Y + 24);
+    // Clip to visible game area — 336x200 centered
+    sceGuScissor(48, 24, 48 + 336, 24 + 200);
     sceGuEnable(GU_SCISSOR_TEST);
     sceGuEnable(GU_TEXTURE_2D);
-
-    if(sys_w.screen_mode){
-        sceGuTexFilter(GU_NEAREST, GU_NEAREST);
-    }
-    else{
-        sceGuTexFilter(GU_LINEAR, GU_LINEAR);
-    }
 }
 
 void endFrame(){

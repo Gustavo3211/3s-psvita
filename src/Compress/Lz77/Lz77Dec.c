@@ -1,5 +1,6 @@
 #include "Compress/Lz77/Lz77Dec.h"
 #include "common.h"
+#include <string.h>
 
 s32 decLZ77withSizeCheck(u8* src, u8* dst, s32 size) {
     s32 j;
@@ -41,6 +42,9 @@ s32 decLZ77withSizeCheck(u8* src, u8* dst, s32 size) {
                         *dst++ = *dic + step;
                         dic++;
                     }
+                } else if (offset >= loop) {
+                    memcpy(dst, dic, loop);
+                    dst += loop;
                 } else {
                     for (j = 0; j < loop; j++) {
                         *dst++ = *dic++;
@@ -57,9 +61,9 @@ s32 decLZ77withSizeCheck(u8* src, u8* dst, s32 size) {
                         loop = 0x100;
                     }
 
-                    for (j = 0; j < loop; j++) {
-                        *dst++ = *src++;
-                    }
+                    memcpy(dst, src, loop);
+                    dst += loop;
+                    src += loop;
 
                     size -= loop;
                     break;
@@ -72,9 +76,9 @@ s32 decLZ77withSizeCheck(u8* src, u8* dst, s32 size) {
                         loop = 0x10000;
                     }
 
-                    for (j = 0; j < loop; j++) {
-                        *dst++ = *src++;
-                    }
+                    memcpy(dst, src, loop);
+                    dst += loop;
+                    src += loop;
 
                     size -= loop;
                     break;
@@ -87,9 +91,8 @@ s32 decLZ77withSizeCheck(u8* src, u8* dst, s32 size) {
                         loop = 0x100;
                     }
 
-                    for (j = 0; j < loop; j++) {
-                        *dst++ = num;
-                    }
+                    memset(dst, num, loop);
+                    dst += loop;
 
                     size -= loop;
                     break;
@@ -103,9 +106,8 @@ s32 decLZ77withSizeCheck(u8* src, u8* dst, s32 size) {
                         loop = 0x10000;
                     }
 
-                    for (j = 0; j < loop; j++) {
-                        *dst++ = num;
-                    }
+                    memset(dst, num, loop);
+                    dst += loop;
 
                     size -= loop;
                     break;
@@ -162,8 +164,13 @@ s32 decLZ77withSizeCheck(u8* src, u8* dst, s32 size) {
 
             dic = dst - offset;
 
-            for (j = 0; j < loop; j++) {
-                *dst++ = *dic++;
+            if (offset >= loop) {
+                memcpy(dst, dic, loop);
+                dst += loop;
+            } else {
+                for (j = 0; j < loop; j++) {
+                    *dst++ = *dic++;
+                }
             }
 
             size -= loop;
