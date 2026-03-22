@@ -1093,8 +1093,8 @@ void bgDrawOneChip(s32 x, s32 y, s32 xs, s32 ys, s32 gbix, u32 vtxCol, s32 ofsPa
     if ((No_Trans == 0) && ppgCheckTextureNumber(0, gbix)) {
         ppgCalScrPosition(x, y, xs, ys);
 
-        if ((scrDrawPos->x >= 384.0f) || (scrDrawPos[3].x < 0.0f) || (scrDrawPos->y >= 224.0f) ||
-            (scrDrawPos[3].y < 0.0f)) {
+        //if ((scrDrawPos->x >= 384.0f) || (scrDrawPos[3].x < 0.0f) || (scrDrawPos->y >= 224.0f) || (scrDrawPos[3].y < 0.0f)) {
+        if ((scrDrawPos->x >= 384.0f) || (scrDrawPos[3].x < 0.0f)) {
             return;
         }
 

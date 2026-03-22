@@ -156,7 +156,8 @@ void njDrawTexture(Polygon* polygon, s32 /* unused */, s32 tex, s32 /* unused */
 void njDrawSprite(Polygon* polygon, s32 /* unused */, s32 tex, s32 /* unused */) {
     Vertex vtx[4];
 
-    if ((polygon[0].x >= 384.0f) || (polygon[3].x < 0.0f) || (polygon[0].y >= 224.0f) || (polygon[3].y < 0.0f)) {
+    //if ((polygon[0].x >= 384.0f) || (polygon[3].x < 0.0f) || (polygon[0].y >= 224.0f) || (polygon[3].y < 0.0f)) {
+    if ((polygon[0].x >= 384.0f) || (polygon[3].x < 0.0f)) {
         return;
     }
 
@@ -192,6 +193,7 @@ void njdp2d_draw_0() {
     w = 0;
 
     sceGuDisable(GU_TEXTURE_2D);
+
     for (i = njdp2d_w.ix1st; i != -1; i = njdp2d_w.prim[i].next) {
         if (njdp2d_w.prim[i].type == 0) {
             vertices = &vertices_total[w];
@@ -202,6 +204,9 @@ void njdp2d_draw_0() {
                 vertices[k].y = vertices[j].y = SCALE_Y(njdp2d_w.prim[i].v[j].y);
                 vertices[k].z = vertices[j].z = njdp2d_w.prim[i].v[j].z * 0xFFFF;
                 vertices[k].colour = vertices[j].colour = njdp2d_w.prim[i].col;
+                if(njdp2d_w.prim[i].v[j].y >= 383.5f){
+                    Full_Screen = 1;
+                }
             }
             vertices[5].x = SCALE_X(njdp2d_w.prim[i].v[j].x);
             vertices[5].y = SCALE_Y(njdp2d_w.prim[i].v[j].y);

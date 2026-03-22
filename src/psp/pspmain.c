@@ -40,7 +40,8 @@ int main(void)  {
     // Use above functions to make exiting possible
     setup_callbacks();
 
-    scePowerSetClockFrequency(333, 333, 166);
+    // DEMMA imma test it without overclock
+    //scePowerSetClockFrequency(333, 333, 166);
 
     initGu();
 

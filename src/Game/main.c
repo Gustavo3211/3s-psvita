@@ -60,8 +60,6 @@ void cpExitTask(u16 num);
 
 int c_x, c_y, c_v_x = 1, c_v_y = 1;
 
-bool fps_30 = 0;
-
 void AcrMain() {
     u16 sw_buff;
     u32 sysinfodisp;
@@ -83,6 +81,8 @@ void AcrMain() {
     flPADGetALL();
     keyConvert();
 
+    int full_screen_default;
+
     if(p1sw_buff){
         //DEMMA_DEBUG = 1;
         DEMMA_DEBUG = 0;
@@ -93,12 +93,17 @@ void AcrMain() {
     if(p1sw_buff & 0x4000){
         Debug_w[DEBUG_BG_DRAW_OFF] = 1;
     }
-    if(p1sw_buff & 0x0001){
-        fps_30 = 1;
+    if(p1sw_buff & 0x8000){
+        full_screen_default = 0;
+    }
+    else{
+        full_screen_default = 1;
     }
 
     while (1) {
         initRenderState(0);
+        Full_Screen = full_screen_default;
+
         mpp_w.ds_h[0] = mpp_w.ds_h[1];
         mpp_w.ds_v[0] = mpp_w.ds_v[1];
         mpp_w.ds_h[1] = 100;
@@ -240,9 +245,6 @@ void AcrMain() {
         //flSetDebugMode(sysinfodisp);
         disp_effect_work();
         flFlip(0);
-
-        if(fps_30)
-            skip_frame = flFrame % 2;
 
         Interrupt_Timer += 1;
         Record_Timer += 1;
