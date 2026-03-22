@@ -41,7 +41,7 @@ int main(void)  {
     setup_callbacks();
 
     // DEMMA imma test it without overclock
-    //scePowerSetClockFrequency(333, 333, 166);
+    scePowerSetClockFrequency(300, 300, 150);
 
     initGu();
 
