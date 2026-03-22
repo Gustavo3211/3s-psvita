@@ -115,7 +115,29 @@ s32 flPS2UnlockTexture(FLTexture*);
 static s32 system_work_init();
 
 
-void swizzle_inplace(void *data, uint32_t width_bytes, uint32_t height);
+void swizzle_inplace(void *data, uint32_t width_bytes, uint32_t height) {
+    uint32_t rowblocks = width_bytes / 16;
+    uint32_t sz = width_bytes * height;
+    u8 *tmp = (u8 *)malloc(sz);
+    if (!tmp) return;
+
+    u8 *src = (u8 *)data;
+    u8 *dst = tmp;
+    uint32_t blockx, blocky, j;
+
+    for (blocky = 0; blocky < height; blocky++) {
+        for (blockx = 0; blockx < rowblocks; blockx++) {
+            uint32_t block_idx = blockx + (blocky / 8) * rowblocks;
+            uint32_t block_ofs = block_idx * 16 * 8 + (blocky & 7) * 16;
+            for (j = 0; j < 16; j++) {
+                dst[block_ofs + j] = *src++;
+            }
+        }
+    }
+
+    memcpy(data, tmp, sz);
+    free(tmp);
+}
 
 u32 flCreateTextureHandle(plContext* bits, u32 flag) {
     FLTexture* lpflTexture;
@@ -310,6 +332,7 @@ u32 flCreatePaletteHandle(plContext* lpcontext, u32 flag) {
             dest[i] = a | (b << 10) | (g << 5) | r;
         }
 
+        sceKernelDcacheWritebackRange(dest, lpflPalette->size);
         flPS2CreatePaletteHandle(ph, flag);
     }
 
@@ -1167,17 +1190,14 @@ void flSetTexture(int th){
     //while(1);
 
     if(currentPalette != palette_handle){
-        sceKernelDcacheWritebackRange(pal, flPal->size);
         sceGuClutMode(GU_PSM_5551, 0, 255, 0);
         sceGuClutLoad(flPal->size / 16, pal);
         currentPalette = palette_handle;
     }
 
     if(currentTexture != texData){
-        sceKernelDcacheWritebackRange(texData, flTex->size);
         sceGuTexMode(flTex->format, 0, 0, GU_FALSE);
         sceGuTexImage(0, flTex->width, flTex->height, flTex->width, texData);
-        //sceGuTexImage(0, flTex->width, flTex->height, flTex->width, p);
         currentTexture = texData;
     }
 }
@@ -1262,25 +1282,28 @@ s32 flPS2ConvertTextureFromContext(plContext* lpcontext, FLTexture* lpflTexture,
 
         case GU_PSM_5551:
             tex_size = dw * dh * 2;
-            p_color_16 = (u16*) dst_ptr;
-            for(int i = 0; i < dw * dh; i++){
-                color = p_color_16[i] & 0x8000;
-                color |= p_color_16[i] & 0x03E0;
-                color |= (p_color_16[i] & 0x7C00) >> 10;
-                color |= (p_color_16[i] & 0x001F) << 10;
-                p_color_16[i] = color;
+            {
+                // Swap R and B channels: process 2 pixels at a time via u32
+                u32 *p32 = (u32*) dst_ptr;
+                int count = (dw * dh) >> 1;
+                for(int i = 0; i < count; i++){
+                    u32 v = p32[i];
+                    u32 rb = v & 0x7C1F7C1F;  // R and B bits
+                    p32[i] = (v & 0x83E083E0) | ((rb >> 10) & 0x001F001F) | ((rb << 10) & 0x7C007C00);
+                }
             }
             break;
 
         case GU_PSM_4444:
             tex_size = dw * dh * 2;
-            p_color_16 = (u16*) dst_ptr;
-            for(int i = 0; i < dw * dh; i++){
-                color = p_color_16[i] & 0x8000;
-                color |= p_color_16[i] & 0x03E0;
-                color |= (p_color_16[i] & 0x7C00) >> 10;
-                color |= (p_color_16[i] & 0x001F) << 10;
-                p_color_16[i] = color;
+            {
+                u32 *p32 = (u32*) dst_ptr;
+                int count = (dw * dh) >> 1;
+                for(int i = 0; i < count; i++){
+                    u32 v = p32[i];
+                    u32 rb = v & 0x7C1F7C1F;
+                    p32[i] = (v & 0x83E083E0) | ((rb >> 10) & 0x001F001F) | ((rb << 10) & 0x7C007C00);
+                }
             }
             break;
 
@@ -1294,8 +1317,11 @@ s32 flPS2ConvertTextureFromContext(plContext* lpcontext, FLTexture* lpflTexture,
         dh >>= 1;
         lpcontext++;
     }
-    if(lpflTexture->tex_num > 1)
+    if(lpflTexture->tex_num > 1){
+        // Flush cache once at load time for main-RAM textures
+        sceKernelDcacheWritebackRange(base_ptr, dst_ptr - base_ptr);
         return 1;
+    }
 
     //if(lpflTexture->width == BG_BUFF_SIZE_X && lpflTexture->height == BG_BUFF_SIZE_Y && lpflTexture->format == GU_PSM_T8){
     //if(dst_ptr - base_ptr == BG_BUFF_SIZE_X * BG_BUFF_SIZE_Y){
@@ -1328,5 +1354,11 @@ s32 flPS2ConvertTextureFromContext(plContext* lpcontext, FLTexture* lpflTexture,
             bg2_used[i] = true;
         }
     }
+
+    // Flush cache once at load time — textures in main RAM need this
+    // VRAM textures (wkVram != NULL) don't need it since VRAM is uncached
+    if(lpflTexture->wkVram == NULL)
+        sceKernelDcacheWritebackRange(base_ptr, dst_ptr - base_ptr);
+
     return 1;
 }

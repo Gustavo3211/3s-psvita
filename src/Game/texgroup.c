@@ -200,7 +200,7 @@ void q_ldreq_texture_group(REQ* curr) {
 
                 // A duplicate transfer occurred. File number: %d\n
                 flLogOut("A duplicate transfer occurred. File number: %d\n", bsd->apfn);
-                while (1) {}
+                return;
             }
 
             rckey_work[curr->lds->key].type = curr->kokey;
@@ -242,8 +242,7 @@ void q_ldreq_texture_group(REQ* curr) {
         }
 
         curr->rno = 4;
-        curr->be = 1;
-        break;
+        /* fallthrough — AFS reads complete instantly */
 
     case 4:
         switch (fsCheckFileReaded(curr)) {
@@ -369,7 +368,8 @@ void reservMemKeySelObj() {
     lds->key = Pull_ramcnt_key(size, 0xD, 0, 1);
 
     if (lds->key < 0) {
-        while (1) {}
+        flLogOut("texgroup: Pull_ramcnt_key failed\n");
+        return;
     }
 }
 

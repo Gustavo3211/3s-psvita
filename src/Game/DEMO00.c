@@ -189,6 +189,7 @@ s32 CAPCOM_Logo() {
 
     default:
         TexRelease(600);
+        enableOffscreenMode();
         Next_Demo = 1;
         break;
     }

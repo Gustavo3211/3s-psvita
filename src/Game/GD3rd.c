@@ -7,6 +7,8 @@
 //#include "sf33rd/AcrSDK/ps2/foundaps2.h"
 //#include "Common/FileSizeAFS.h"
 #include "psp/files.h"
+#include "psp/afs.h"
+#include "psp/adx.h"
 
 #include "Game/RAMCNT.h"
 #include "Game/WORK_SYS.h"
@@ -21,6 +23,7 @@
 //#include <libgraph.h>
 
 #include <stdio.h>
+#include <pspthreadman.h>
 
 typedef struct {
     // total size: 0x4
@@ -46,9 +49,8 @@ u16 DskDrvErrRetry;
 PS2CDReadMode ps2CdReadMode;
 s16 plt_req[2]; // size: 0x4, address: 0x579084
 u8 ldreq_break;
-FILE* adxf = NULL;
 u8 sf3ptinfo[3352];
-REQ q_ldreq[16];      // size: 0x280, address: 0x5E1DD0
+REQ q_ldreq[24];
 u8 ldreq_result[294]; // size: 0x126, address: 0x5E1CA0
 
 const u8 lpr_wrdata[3] = { 0x03, 0xC0, 0x3C }; // size: 0x3, address: 0x51FCF0
@@ -69,7 +71,11 @@ const LDREQ_TBL ldreq_tbl[294];
 const s16 ldreq_ix[43][2];
 
 s32 Setup_Directory_Record_Data() {
-    //i trust SF33RD.AFS will be extracted
+    // Init AFS archive — single file, async I/O thread
+    if (!afsInit("resources/SF33RD.AFS")) {
+        flLogOut("AFS init FAILED!\n");
+        while(1) {}
+    }
 
     /*
     DskDrvErrBe = 0;
@@ -158,50 +164,28 @@ void fsUpdateDiskDriveError() {
 }
 
 s32 fsOpen(REQ* req) {
-    flLogOut("fsOpen\n");
     if (req->fnum >= AFS_FILE_COUNT) {
         return 0;
     }
 
-    if (fsGetFileSize(req->fnum) == 0) {
-        return 0;
-    }
-
-    if (adxf != NULL) {
-        fclose(adxf);
-    }
-
-    adxf = fopen(getFile(req->fnum),"rb");
-    flLogOut("opened: %s\n", getFile(req->fnum));
-
-    if (adxf == NULL) {
+    u32 sz = fsGetFileSize(req->fnum);
+    if (sz == 0) {
         return 0;
     }
 
     req->info.number = 1;
-    req->info.size = fsGetFileSize(req->fnum);
+    req->info.size = sz;
     return 1;
 }
 
 void fsClose(REQ* /* unused */) {
-    if(adxf != NULL){
-        fclose(adxf);
-        adxf = NULL;
-    }
 }
 
 u32 fsGetFileSize(u16 fnum) {
-    SceIoStat stat;
-
     if (fnum >= AFS_FILE_COUNT) {
         return 0;
     }
-    
-    if (sceIoGetstat(getFile(fnum), &stat) < 0) {
-        return 0;  // Error
-    }
-
-    return stat.st_size;  // File size in bytes
+    return afsGetFileSize(fnum);
 }
 
 u32 fsCalSectorSize(u32 size) {
@@ -219,7 +203,8 @@ s32 fsCansel(REQ* /* unused */) {
 }
 
 s32 fsCheckCommandExecuting() {
-    if (adxf == NULL) {
+    s32 r = afsCheckRead();
+    if (r != 0) {
         return 0;
     }
 
@@ -232,59 +217,18 @@ s32 fsCheckCommandExecuting() {
     return 0;
 }
 
-s32 fsRequestFileRead(REQ* /* unused */, u32 sec, void* buff) {
-    if (adxf == NULL || buff == NULL)
-        return 0; // error
-
-    size_t bytes = sec * SECTOR_SIZE;
-
-    size_t read = fread(buff, 1, bytes, adxf);
-
-    if (read != bytes){
-        if (ferror(adxf))
-            return 0; // read error
-    }
-
-    return 1;
+s32 fsRequestFileRead(REQ* req, u32 sec, void* buff) {
+    if (buff == NULL) return 0;
+    return afsReadAsync(req->fnum, buff, sec * SECTOR_SIZE);
 }
 
 s32 fsCheckFileReaded(REQ* /* unused */) {
-    /*
-    fsUpdateDiskDriveError();
-
-    if (adxf == NULL) {
-        return 2; // error
-    }
-
-    if (ferror(adxf)) {
-        return 2; // read error
-    }
-
-    // Since stdio is synchronous, if we're here, read is complete
-    */
-    return 1;
+    return afsCheckRead();
 }
 
 s32 fsFileReadSync(REQ* req, u32 sec, void* buff) {
-    s32 rnum = fsRequestFileRead(req, sec, buff);
-
-    if (rnum == 0) {
-        return 0;
-    }
-
-    while (1) {
-        rnum = fsCheckFileReaded(req);
-
-        if (rnum == 1) {
-            return 1;
-        }
-
-        if (rnum == 2) {
-            return 0;
-        }
-
-        waitVsyncDummy();
-    }
+    if (buff == NULL) return 0;
+    return afsReadSync(req->fnum, buff, sec * SECTOR_SIZE);
 }
 
 void waitVsyncDummy() {
@@ -306,7 +250,7 @@ s32 load_it_use_any_key2(u16 fnum, void** adrs, s16* key, u8 kokey, u8 group) {
 
     if (fnum >= AFS_FILE_COUNT) {
         flLogOut("There is an error in the file number. File number:%d\n", fnum);
-        while (1) {}
+        return -1;
     }
 
     flLogOut("load_it_use_any_key2\n");
@@ -345,29 +289,20 @@ s16 load_it_use_any_key(u16 fnum, u8 kokey, u8 group) {
 
 s32 load_it_use_this_key(u16 fnum, s16 key) {
     REQ req;
-    u32 err;
 
     req.fnum = fnum;
 
-    flLogOut("load_it_use_this_key\n");
-
-    while (1) {
-        err = fsOpen(&req);
-
-        if (err == 0) {
-            continue;
-        }
-
-        req.size = fsGetFileSize(req.fnum);
-        req.sect = fsCalSectorSize(req.size);
-        err = fsFileReadSync(&req, req.sect, (void*)Get_ramcnt_address(key));
-        fsClose(&req);
-        Set_size_data_ramcnt_key(key, req.size);
-
-        if (err != 0) {
-            return 1;
-        }
+    if (fsOpen(&req) == 0) {
+        return 0;
     }
+
+    req.size = req.info.size;
+    req.sect = fsCalSectorSize(req.size);
+    s32 err = fsFileReadSync(&req, req.sect, (void*)Get_ramcnt_address(key));
+    fsClose(&req);
+    Set_size_data_ramcnt_key(key, req.size);
+
+    return err;
 }
 
 void Init_Load_Request_Queue_1st() {
@@ -490,13 +425,13 @@ s32 Push_LDREQ_Queue(REQ* ldreq) {
     s16 i;
     u8 masknum;
 
-    for (i = 0; i < 16; i++) {
+    for (i = 0; i < 24; i++) {
         if (q_ldreq[i].be == 0) {
             break;
         }
     }
 
-    if (i != 0x10) {
+    if (i != 24) {
         q_ldreq[i] = ldreq[0];
         q_ldreq[i].be = 2;
         q_ldreq[i].rno = 0;
@@ -534,7 +469,7 @@ void Check_LDREQ_Queue() {
             ldreq_process[q_ldreq->type](q_ldreq);
 
             if (q_ldreq->be == 0) {
-                for (i = 0; i < 15; i++) {
+                for (i = 0; i < 23; i++) {
                     q_ldreq[i] = q_ldreq[i + 1];
                 }
 

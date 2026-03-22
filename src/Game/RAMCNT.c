@@ -10,8 +10,7 @@
 #include "Game/debug/Debug.h"
 #include "Game/texgroup.h"
 
-#define ERR_STOP                                                                                                       \
-    while (1) {}
+#define ERR_STOP /* error trap removed for PSP port */
 
 RCKeyWork rckey_work[RCKEY_WORK_MAX];
 _MEMMAN_OBJ rckey_mmobj;
@@ -117,9 +116,8 @@ void Purge_memory_of_kind_of_key(u8 kokey) {
 
 void Set_size_data_ramcnt_key(s16 key, u32 size) {
     if (key <= 0) {
-        // An attempt was made to store a file size in an unused memory key.\n
         flLogOut("An attempt was made to store a file size in an unused memory key.\n");
-        ERR_STOP;
+        return;
     }
 
     rckey_work[key].size = size;
@@ -128,9 +126,8 @@ void Set_size_data_ramcnt_key(s16 key, u32 size) {
 size_t Get_size_data_ramcnt_key(s16 key) {
     
     if (key <= 0) {
-        // An attempt was made to get a file size from an unused memory key.\n
         flLogOut("An attempt was made to get a file size from an unused memory key.\n");
-        ERR_STOP;
+        return 0;
     }
 
     return rckey_work[key].size;
@@ -138,9 +135,8 @@ size_t Get_size_data_ramcnt_key(s16 key) {
 
 uintptr_t Get_ramcnt_address(s16 key) {
     if (key <= 0) {
-        // An attempt was made to obtain an address from an unused memory key.\n
         flLogOut("An attempt was made to obtain an address from an unused memory key.\n");
-        ERR_STOP;
+        return 0;
     }
 
     return rckey_work[key].adr;
@@ -179,9 +175,8 @@ s16 Pull_ramcnt_key(size_t memreq, u8 kokey, u8 group, u8 frre) {
     s16 key;
 
     if (rckeyctr <= 0) {
-        // There are not enough memory keys.\n
         flLogOut("There are not enough memory keys.\n");
-        ERR_STOP;
+        return -1;
     }
 
     key = rckeyque[(rckeyctr -= 1)];
@@ -211,7 +206,7 @@ s16 Pull_ramcnt_key(size_t memreq, u8 kokey, u8 group, u8 frre) {
         flLogOut("memreq=%u\n", memreq);
         flLogOut("remainder=%u\n", rckey_mmobj.remainder);
         flLogOut("rckeyctr=%d\n", rckeyctr);
-        ERR_STOP;
+        return -1;
     }
 
     rwk->use = 1;
