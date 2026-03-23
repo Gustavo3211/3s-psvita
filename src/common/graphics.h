@@ -38,6 +38,7 @@ extern float Max_Y;
 #define SCREEN_MODE_FULLSCREEN 0
 #define SCREEN_MODE_ORIGINAL 1
 #define SCREEN_MODE_VERTICAL 2
+#define SCREEN_MODE_EXTENDED 3
 
 // functions
 void initGu();

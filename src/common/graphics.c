@@ -69,6 +69,19 @@ void setupScaling() {
             Min_Y = -16.0f;
             Max_Y = 230.0f;
             break;
+            
+        case SCREEN_MODE_EXTENDED:
+            /* Native resolution centered */
+            Scale_Factor_X = 1.0f;
+            Scale_Factor_Y = 1.0f;
+            Scale_Off_X = 48.0f;
+            Scale_Off_Y = 24.0f;
+
+            Min_X = -48.0f;
+            Max_X = 480.0f;
+            Min_Y = -24.0f;
+            Max_Y = 272.0f;
+            break;
     }
 }
 

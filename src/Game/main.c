@@ -99,7 +99,7 @@ void AcrMain() {
         screen_mode_default = SCREEN_MODE_VERTICAL;
     }
     else{
-        screen_mode_default = SCREEN_MODE_VERTICAL;
+        screen_mode_default = SCREEN_MODE_EXTENDED;
     }
 
     while (RUNNING) {
@@ -289,20 +289,20 @@ void MaskScreenEdge() {
 
     appViewGetItems(&prm);
 
-    if (prm.x1 < 384.0f) {
-        pos[0] = pos[4] = mpp_w.vprm.x1;
-        pos[2] = pos[6] = 384.0f;
-        pos[1] = pos[3] = mpp_w.vprm.y0;
-        pos[5] = pos[7] = 224.0f;
+    if (prm.x1 < Max_X) {
+        pos[0] = pos[4] = mpp_w.vprm.x1 - Min_X;
+        pos[2] = pos[6] = Max_X;
+        pos[1] = pos[3] = mpp_w.vprm.y0 - Min_Y;
+        pos[5] = pos[7] = Max_Y;
 
         njdp2d_sort(pos, PrioBase[0], (0xFF << 24), 0);
     }
 
-    if (prm.y1 < 224.0f) {
-        pos[0] = pos[4] = mpp_w.vprm.x0;
-        pos[2] = pos[6] = 384.0f;
-        pos[1] = pos[3] = mpp_w.vprm.y1;
-        pos[5] = pos[7] = 224.0f;
+    if (prm.y1 < Max_Y) {
+        pos[0] = pos[4] = mpp_w.vprm.x0 - Min_X;
+        pos[2] = pos[6] = Max_X;
+        pos[1] = pos[3] = mpp_w.vprm.y1 - Min_Y;
+        pos[5] = pos[7] = Max_Y;
 
         njdp2d_sort(pos, PrioBase[0], (0xFF << 24), 0);
     }

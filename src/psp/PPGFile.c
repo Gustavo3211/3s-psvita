@@ -318,7 +318,7 @@ s32 ppgWriteQuadUseTrans(Vertex* pos, u32 col, PPGDataList* tb, s32 tix, s32 cix
     PPGFileHeader* ppg;
 
     //if ((pos[0].x >= 384.0f) || (pos[3].x < 0.0f) || (pos[0].y >= 224.0f) || (pos[3].y < 0.0f)) {
-    if ((pos[0].x >= 384.0f) || (pos[3].x < 0.0f)) {
+    if ((pos[0].x >= Max_X) || (pos[3].x < Min_X) || (pos[0].y >= Max_Y) || (pos[3].y < Min_Y)) {
         return 0;
     }
 
@@ -421,7 +421,7 @@ s32 ppgWriteQuadUseTrans(Vertex* pos, u32 col, PPGDataList* tb, s32 tix, s32 cix
                 }
 
                 //if ((qvtx[0].x < 384.0f) && (qvtx[3].x >= 0.0f) && (qvtx[0].y < 224.0f) && (qvtx[3].y >= 0.0f)) {
-                if ((qvtx[0].x < 384.0f) && (qvtx[3].x >= 0.0f)) {
+                if ((qvtx[0].x < Max_X) && (qvtx[3].x >= Min_X) && (qvtx[0].y < Max_Y) && (qvtx[3].y >= Min_Y)) {
                     if (flip & 1) {
                         qvtx[3].u = (sx / ppgwf) - sadd;
                         qvtx[0].u = ((sx + xs) / ppgwf) - sadd;
