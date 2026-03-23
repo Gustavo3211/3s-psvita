@@ -345,6 +345,7 @@ void adxUpdate(void) {
 
 static s32 adx_entry_queue[16];
 static s32 adx_entry_count = 0;
+static void adx_preload_next_segment(void);
 
 void ADX_Init(void) {
     adxInit();
@@ -369,6 +370,10 @@ void ADX_StartAfs(s32 fnum) {
 void ADX_EntryAfs(s32 fnum) {
     if (adx_entry_count < 16) {
         adx_entry_queue[adx_entry_count++] = fnum;
+        /* Preload immediately if a track is playing and no preload pending */
+        if (P.stat == ADX_STAT_PLAYING && !adx_next_ready) {
+            adx_preload_next_segment();
+        }
     }
 }
 
