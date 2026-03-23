@@ -105,7 +105,31 @@ static s16 blk_buf[MAX_CH][64];
 static s32 blk_pos = 0, blk_avail = 0;
 static s16 last_l = 0, last_r = 0;
 static u32 resample_frac = 0;
-static s32 adx_paused = 0;
+static volatile s32 adx_paused = 0;
+
+/* Async ADX loading state */
+static volatile s32 adx_loading = 0;  /* 1 = async read in progress */
+static u8 *adx_load_buf = NULL;
+static u32 adx_load_size = 0;
+
+/* Deferred free — old buffer freed after callback can't reference it */
+static u8 *adx_free_pending = NULL;
+static s32 adx_buf_owned = 0;  /* 1 = P.buf was malloc'd, 0 = static */
+
+/* Seamless preload — next segment ready for instant callback swap */
+static u8 *adx_next_buf = NULL;
+static u32 adx_next_size = 0;
+static s32 adx_next_data_offset = 0;
+static s32 adx_next_channels = 0;
+static s32 adx_next_sample_rate = 0;
+static s32 adx_next_block_size = 0;
+static s32 adx_next_spb = 0;
+static s32 adx_next_frame_size = 0;
+static s32 adx_next_coeff1 = 0, adx_next_coeff2 = 0;
+static s32 adx_next_loop_enabled = 0;
+static s32 adx_next_loop_start = 0, adx_next_loop_end = 0;
+static volatile s32 adx_next_ready = 0;  /* 1 = callback can swap to this */
+static volatile s32 adx_next_consumed = 0; /* 1 = callback took the preload */
 
 static void decode_next_sample(void) {
     if (P.stat != ADX_STAT_PLAYING || P.buf == NULL) {
@@ -119,6 +143,27 @@ static void decode_next_sample(void) {
             if (P.loop_enabled && P.loop_start_byte >= 0) {
                 P.pos = P.loop_start_byte;
                 memset(P.ch, 0, sizeof(P.ch));
+            } else if (adx_next_ready && adx_next_buf) {
+                /* Seamless swap inside callback — zero gap */
+                adx_free_pending = P.buf;
+                P.buf = adx_next_buf;
+                P.buf_size = adx_next_size;
+                P.data_offset = adx_next_data_offset;
+                P.channels = adx_next_channels;
+                P.sample_rate = adx_next_sample_rate;
+                P.block_size = adx_next_block_size;
+                P.spb = adx_next_spb;
+                P.frame_size = adx_next_frame_size;
+                P.coeff1 = adx_next_coeff1;
+                P.coeff2 = adx_next_coeff2;
+                P.loop_enabled = adx_next_loop_enabled;
+                P.loop_start_byte = adx_next_loop_start;
+                P.loop_end_byte = adx_next_loop_end;
+                P.pos = 0;
+                adx_next_buf = NULL;
+                adx_next_ready = 0;
+                adx_next_consumed = 1;
+                /* Don't reset P.ch — keep ADPCM history continuous */
             } else {
                 P.stat = ADX_STAT_PLAYEND;
                 last_l = last_r = 0;
@@ -182,38 +227,66 @@ void adxShutdown(void) {
     if (P.buf) free(P.buf);
 }
 
-void adxPlay(u16 fnum) {
-    // Stop current
-    P.stat = ADX_STAT_STOP;
-    if (P.buf) { free(P.buf); P.buf = NULL; }
-    P.pos = 0;
-
+static void adxPlayInternal(u16 fnum, s32 sync) {
     u32 file_size = afsGetFileSize(fnum);
     if (file_size == 0) return;
 
     u8 *buf = (u8 *)memalign(16, file_size);
     if (!buf) return;
 
-    if (!afsReadSync(fnum, buf, file_size)) {
-        free(buf);
-        return;
-    }
+    /* Cancel any pending async load */
+    if (adx_load_buf) { free(adx_load_buf); adx_load_buf = NULL; }
+    adx_loading = 0;
 
-    if (parse_header(buf, file_size) < 0) {
-        free(buf);
-        return;
+    if (sync) {
+        if (!afsReadSync(fnum, buf, file_size)) {
+            free(buf);
+            return;
+        }
+        if (parse_header(buf, file_size) < 0) {
+            free(buf);
+            return;
+        }
+        u8 *old = P.buf;
+        s32 old_owned = adx_buf_owned;
+        P.buf = buf;
+        P.buf_size = file_size;
+        P.pos = 0;
+        adx_buf_owned = 1;
+        P.stat = ADX_STAT_PLAYING;
+        if (old && old_owned) adx_free_pending = old;
+    } else {
+        P.stat = ADX_STAT_STOP;
+        if (P.buf && adx_buf_owned) { adx_free_pending = P.buf; }
+        P.buf = NULL;
+        P.pos = 0;
+        adx_load_buf = buf;
+        adx_load_size = file_size;
+        adx_loading = 1;
+        afsReadAsync(fnum, buf, file_size);
     }
-    P.buf = buf;
-    P.buf_size = file_size;
-    P.pos = 0;
-    P.stat = ADX_STAT_PLAYING;
+}
+
+void adxPlay(u16 fnum) {
+    adxPlayInternal(fnum, 1);  /* PSP: always sync — async races with stop calls */
+}
+
+void adxPlaySync(u16 fnum) {
+    adxPlayInternal(fnum, 1);  /* sync for seamless */
 }
 
 void adxPlayLoop(u16 fnum, u32 ls, u32 le) { adxPlay(fnum); }
 
 void adxStop(void) {
     P.stat = ADX_STAT_STOP;
-    if (P.buf) { free(P.buf); P.buf = NULL; }
+    if (P.buf && adx_buf_owned) { adx_free_pending = P.buf; }
+    P.buf = NULL;
+    adx_buf_owned = 0;
+    if (adx_load_buf) { free(adx_load_buf); adx_load_buf = NULL; }
+    if (adx_next_buf) { free(adx_next_buf); adx_next_buf = NULL; }
+    adx_loading = 0;
+    adx_next_ready = 0;
+    adx_next_consumed = 0;
     P.pos = 0;
 }
 
@@ -224,7 +297,32 @@ void adxSetVolume(s32 vol) {
 }
 
 AdxStat adxGetStat(void) { return P.stat; }
-void adxUpdate(void) { }
+
+void adxUpdate(void) {
+    if (adx_free_pending) {
+        free(adx_free_pending);
+        adx_free_pending = NULL;
+    }
+
+    /* Check if async ADX load completed */
+    if (adx_loading && afsCheckRead()) {
+        adx_loading = 0;
+        u8 *buf = adx_load_buf;
+        u32 size = adx_load_size;
+        adx_load_buf = NULL;
+
+        if (parse_header(buf, size) < 0) {
+            free(buf);
+            return;
+        }
+        P.buf = buf;
+        P.buf_size = size;
+        P.pos = 0;
+        blk_pos = blk_avail = 0;
+        resample_frac = 0;
+        P.stat = ADX_STAT_PLAYING;
+    }
+}
 
 // ── Compatibility wrappers for the new sound system ──────────────
 // Bridge the branch's ADX_* API to our existing adx* functions.
@@ -248,51 +346,109 @@ void ADX_Stop(void) {
 }
 
 void ADX_StartAfs(s32 fnum) {
-    adxPlay((u16)fnum);
     adx_paused = 0;
+    P.volume = 127;
+    adxPlay((u16)fnum);
 }
 
 void ADX_EntryAfs(s32 fnum) {
-    /* Queue a file for seamless playback.
-       For now just store it; ADX_StartSeamless will play the first one. */
     if (adx_entry_count < 16) {
         adx_entry_queue[adx_entry_count++] = fnum;
     }
 }
 
+/* Parse ADX header directly into adx_next_* fields without touching P */
+static s32 parse_header_into_next(const u8 *h, s32 size) {
+    if (size < 20 || h[0] != 0x80) return -1;
+    adx_next_data_offset = (s32)rb16(h + 2) + 4;
+    adx_next_channels = h[7];
+    if (adx_next_channels < 1 || adx_next_channels > MAX_CH) return -1;
+    adx_next_sample_rate = (s32)rb32(h + 8);
+    adx_next_block_size = h[5];
+    if (adx_next_block_size < 3) return -1;
+    adx_next_spb = (adx_next_block_size - 2) * 2;
+    adx_next_frame_size = adx_next_block_size * adx_next_channels;
+
+    double w = 2.0 * M_PI * 500.0 / (double)adx_next_sample_rate;
+    double x = sqrt(2.0) - cos(w);
+    double y = sqrt(2.0) - 1.0;
+    double z = (x - sqrt((x+y)*(x-y))) / y;
+    adx_next_coeff1 = (s32)(z * 8192.0);
+    adx_next_coeff2 = (s32)(z * z * -4096.0);
+
+    adx_next_loop_enabled = 0;
+    u8 ver = h[0x12];
+    if (ver == 3 && size > 0x28) {
+        if (rb16(h + 0x16) == 1) {
+            adx_next_loop_enabled = 1;
+            adx_next_loop_start = (s32)rb32(h + 0x1C) - adx_next_data_offset;
+            adx_next_loop_end = (s32)rb32(h + 0x24) - adx_next_data_offset;
+            if (adx_next_loop_start < 0) adx_next_loop_start = 0;
+            if (adx_next_loop_end < 0) adx_next_loop_end = 0;
+        }
+    }
+    return 0;
+}
+
+/* Preload next queued segment so the callback can swap with zero gap */
+static void adx_preload_next_segment(void) {
+    if (adx_next_ready || adx_entry_count <= 0) return;
+
+    u16 fnum = (u16)adx_entry_queue[0];
+    u32 file_size = afsGetFileSize(fnum);
+    if (file_size == 0) return;
+
+    u8 *buf = (u8 *)memalign(16, file_size);
+    if (!buf) return;
+
+    if (!afsReadSync(fnum, buf, file_size)) {
+        free(buf);
+        return;
+    }
+
+    if (parse_header_into_next(buf, file_size) < 0) {
+        free(buf);
+        return;
+    }
+
+    adx_next_buf = buf;
+    adx_next_size = file_size;
+    adx_next_ready = 1;
+}
+
 void ADX_StartSeamless(void) {
-    /* Start playing the first queued entry and unpause */
+    adx_paused = 0;
+    P.volume = 127;
+
     if (adx_entry_count > 0) {
-        adxPlay((u16)adx_entry_queue[0]);
+        adxPlaySync((u16)adx_entry_queue[0]);
         for (s32 i = 1; i < adx_entry_count; i++) {
             adx_entry_queue[i - 1] = adx_entry_queue[i];
         }
         adx_entry_count--;
+
+        /* Preload the NEXT segment so callback can swap instantly */
+        adx_preload_next_segment();
     }
-    adx_paused = 0;
 }
 
 void ADX_StartMem(void* data, u32 size) {
     if (!data || size == 0) return;
 
-    /* Stop current */
     P.stat = ADX_STAT_STOP;
-    if (P.buf) { free(P.buf); P.buf = NULL; }
+    if (P.buf && adx_buf_owned) { adx_free_pending = P.buf; }
+    P.buf = NULL;
     P.pos = 0;
 
-    /* Copy to our own buffer (caller may free theirs) */
-    u8 *buf = (u8 *)memalign(16, size);
-    if (!buf) return;
-    memcpy(buf, data, size);
+    if (parse_header((u8*)data, size) < 0) return;
 
-    if (parse_header(buf, size) < 0) {
-        free(buf);
-        return;
-    }
-
-    P.buf = buf;
+    P.buf = (u8*)data;
     P.buf_size = size;
     P.pos = 0;
+    blk_pos = blk_avail = 0;
+    resample_frac = 0;
+    adx_buf_owned = 0;  /* static buffer, don't free */
+    P.volume = 127;
     P.stat = ADX_STAT_PLAYING;
     adx_paused = 0;
 }
@@ -339,7 +495,20 @@ s32 ADX_IsPaused(void) {
 
 void ADX_ProcessTracks(void) {
     adxUpdate();
-    /* Auto-advance seamless queue when current track ends */
+
+    /* Callback consumed the preload — advance queue and preload next */
+    if (adx_next_consumed) {
+        adx_next_consumed = 0;
+        if (adx_entry_count > 0) {
+            for (s32 i = 1; i < adx_entry_count; i++) {
+                adx_entry_queue[i - 1] = adx_entry_queue[i];
+            }
+            adx_entry_count--;
+        }
+        adx_preload_next_segment();
+    }
+
+    /* Fallback: if no preload was ready and track ended, use sync swap */
     if (adx_entry_count > 0 && adxGetStat() == ADX_STAT_PLAYEND) {
         ADX_StartSeamless();
     }

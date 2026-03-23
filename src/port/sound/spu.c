@@ -329,6 +329,13 @@ void SPU_VoiceStart(int vnum, u32 start_addr) {
     SPU_Voice* v = &voices[vnum];
     u16 header;
 
+    /* Reject voices with invalid start address (unloaded bank data) */
+    if (start_addr == 0 || start_addr >= 0x100000) {
+        v->run = false;
+        active_voices &= ~(1ULL << vnum);
+        return;
+    }
+
     v->ssa = start_addr;
     v->lsa = start_addr;
     v->nax = v->ssa;
