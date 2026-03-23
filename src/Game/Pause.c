@@ -13,6 +13,7 @@
 #include "AcrSDK/common/pad.h"
 
 u8 PAUSE_X;
+extern volatile int g_request_pause;
 
 void Pause_Task(struct _TASK* task_ptr);
 
@@ -153,7 +154,8 @@ s32 Check_Pause_Term(u16 sw, u8 PL_id) {
         return 0;
     }
 
-    if (sw & SWK_START) {
+    if (sw & SWK_START || g_request_pause) {
+        g_request_pause = 0;
         Pause_Type = 1;
         return PAUSE_X = 1;
     }

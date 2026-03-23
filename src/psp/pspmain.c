@@ -16,6 +16,17 @@ PSP_HEAP_SIZE_KB(-1024);
 PSP_HEAP_THRESHOLD_SIZE_KB(1024);
 
 // global variables
+volatile int g_request_pause = 0;
+
+int power_callback(int unknown, int powerInfo, void *common) {
+    if (powerInfo & PSP_POWER_CB_SUSPENDING) {
+        g_request_pause = 1;
+    }
+    if (powerInfo & PSP_POWER_CB_RESUME_COMPLETE) {
+        g_request_pause = 0;
+    }
+    return 0;
+}
 
 int exit_callback(int arg1, int arg2, void *common) {
     sceKernelExitGame();
@@ -23,14 +34,18 @@ int exit_callback(int arg1, int arg2, void *common) {
 }
 
 int callback_thread(SceSize args, void *argp) {
-    int cbid = sceKernelCreateCallback("Exit Callback", exit_callback, NULL);
-    sceKernelRegisterExitCallback(cbid);
+    int exit_cbid = sceKernelCreateCallback("Exit Callback", exit_callback, NULL);
+    sceKernelRegisterExitCallback(exit_cbid);
+
+    int power_cbid = sceKernelCreateCallback("Power Callback", power_callback, NULL);
+    scePowerRegisterCallback(0, power_cbid);
+
     sceKernelSleepThreadCB();
     return 0;
 }
 
 int setup_callbacks(void) {
-    int thid = sceKernelCreateThread("update_thread", callback_thread, 0x11, 0xFA0, 0, 0);
+    int thid = sceKernelCreateThread("callback_thread", callback_thread, 0x11, 0xFA0, 0, 0);
     if(thid >= 0)
         sceKernelStartThread(thid, 0, 0);
     return thid;
@@ -41,7 +56,7 @@ int main(void)  {
     setup_callbacks();
 
     // DEMMA imma test it without overclock
-    scePowerSetClockFrequency(300, 300, 150);
+    //scePowerSetClockFrequency(300, 300, 150);
 
     initGu();
 

@@ -525,7 +525,7 @@ void toSelectGame(struct _TASK* task_ptr) {
         break;
 
     default:
-        
+        RUNNING = 0;
         break;
     }
 }
