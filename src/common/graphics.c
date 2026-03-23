@@ -17,7 +17,29 @@ int my_gu_init = 0;
 
 int Full_Screen = 0;
 
-// per-vertex SCALE_X/SCALE_Y handles fullscreen
+/* Scaling: default = fullscreen (aspect-preserving)
+   CPS3 = 384x224, PSP = 480x272
+   Scale = 272/224 = 1.2143, width = 384*1.2143 = 466, offset = (480-466)/2 = 7 */
+float Scale_Factor_X = 1.2143f;
+float Scale_Factor_Y = 1.2143f;
+float Scale_Off_X = 7.0f;
+float Scale_Off_Y = 0.0f;
+
+void setupScaling(int fullscreen) {
+    if (fullscreen) {
+        /* Aspect-preserving scale to fill PSP height */
+        Scale_Factor_X = 272.0f / 224.0f;
+        Scale_Factor_Y = 272.0f / 224.0f;
+        Scale_Off_X = (480.0f - 384.0f * Scale_Factor_X) / 2.0f;
+        Scale_Off_Y = 0.0f;
+    } else {
+        /* Native resolution centered */
+        Scale_Factor_X = 1.0f;
+        Scale_Factor_Y = 1.0f;
+        Scale_Off_X = 48.0f;
+        Scale_Off_Y = 24.0f;
+    }
+}
 
 void enableOffscreenMode() { }
 
@@ -76,19 +98,17 @@ void startFrame(){
     sceGuClearDepth(0xFFFF);
     sceGuDisable(GU_SCISSOR_TEST);
     sceGuClear(GU_COLOR_BUFFER_BIT | GU_DEPTH_BUFFER_BIT);
+    /* Clip to scaled game area — trim overscan on right edge only */
+    s32 sx = (s32)SCALE_X(0);
+    s32 sy = (s32)SCALE_Y(0);
+    s32 sw = (s32)(SCALE_X(384) - 5);
+    s32 sh = (s32)SCALE_Y(224);
+    sceGuScissor(sx, sy, sw, sh);
     sceGuEnable(GU_SCISSOR_TEST);
     sceGuEnable(GU_TEXTURE_2D);
 }
 
 void endFrame(){
-    if(Full_Screen){
-        // Clip to visible game area — 336x200 centered
-        sceGuScissor(48, 24, 48 + 336, 24 + 200);
-    }
-    else{
-        // extend vertically game area
-        sceGuScissor(48, 4, 384, 248);
-    }
     sceGuFinish();
     sceGuSync(GU_SYNC_FINISH, GU_SYNC_WHAT_DONE);
     sceDisplayWaitVblankStart();

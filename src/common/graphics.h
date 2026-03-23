@@ -14,9 +14,14 @@
 #define SCREEN_WIDTH 480
 #define SCREEN_HEIGHT 272
 
-// Native res centered — offset only, no scaling, no seams
-#define SCALE_X(x) ((x) + 48.0f)
-#define SCALE_Y(y) ((y) + 24.0f)
+// Scaling macros — switch between fullscreen and native
+extern float Scale_Factor_X;
+extern float Scale_Factor_Y;
+extern float Scale_Off_X;
+extern float Scale_Off_Y;
+
+#define SCALE_X(x) ((x) * Scale_Factor_X + Scale_Off_X)
+#define SCALE_Y(y) ((y) * Scale_Factor_Y + Scale_Off_Y)
 
 // c++ guard
 #ifdef __cplusplus
@@ -34,6 +39,7 @@ void startFrame();
 void endFrame();
 void endFrameDebug();
 void enableOffscreenMode();
+void setupScaling(int fullscreen);
 
 uint32_t getBgColor();
 void setBgColor(uint32_t color);
