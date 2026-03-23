@@ -23,7 +23,6 @@ int power_callback(int unknown, int powerInfo, void *common) {
         g_request_pause = 1;
     }
     if (powerInfo & PSP_POWER_CB_RESUME_COMPLETE) {
-        g_request_pause = 0;
     }
     return 0;
 }
