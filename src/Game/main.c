@@ -101,6 +101,7 @@ void AcrMain() {
     else{
         full_screen_default = 1;
     }
+    setupScaling(full_screen_default);
 
     while (RUNNING) {
         initRenderState(0);
