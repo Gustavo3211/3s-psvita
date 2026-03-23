@@ -2,26 +2,40 @@ BUILD:
 
 $ mkdir build
 $ cd build
+$ psp-cmake ..
 $ make
 
-you'll need SF33RD.AFS (3sx extracts it from the iso), extract the files (AFSPacker is what i use), and place them in a folder named "resources" next to the EBOOT
+
+--IMPORTANT--
+you'll to copy  SF33RD.AFS (3sx extracts it from the iso) to PSP/GAME/3sx/resources/
+your files should end up like this
+PSP/GAME/3sx/EBOOT.PBP
+PSP/GAME/3sf/resources/SF33RD.AFS
+
 
 CONFIGS:
 -press start at boot to disable backgrounds
+-press select at boot for extended vertical view
+
 
 TO-DO:
 
-src/Game/texcash.c:
--modify MTSBase mts_base, life16 and life32 so it doesn't slow down with certain animations
+fix zoom and screen settings
 
-src/Game/PPGFile.c:
--remove and fix the u * tex->width, v * tex->height
--fix ppgWriteQuadUseTrans
 
 src/Game/menu.c:
 -SaveMove()
 -SaveInit(,)
 
-src/Game/Sound3rd.c:
--it's sound, it has to be ported with care, specificaly adxt stuff
--BGM_Server()
+--CREDITS--
+-daouid
+-demmis98
+-gibletto
+
+
+thanks to everyone following this proyect
+i honestly never thought it could run this well on real hardware, and even have sound
+thanks to everyone who downloaded it and tried it on their psp, it makes me so happy to see people enjoying this port
+this code has taken a new life beyond what i had envisioned, and i'm happy for that
+if you have any comment, suggestion or anything let us know
+-demma (demmis98)

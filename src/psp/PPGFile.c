@@ -317,7 +317,8 @@ s32 ppgWriteQuadUseTrans(Vertex* pos, u32 col, PPGDataList* tb, s32 tix, s32 cix
     f32 ppghf;
     PPGFileHeader* ppg;
 
-    if ((pos[0].x >= 384.0f) || (pos[3].x < 0.0f) || (pos[0].y >= 224.0f) || (pos[3].y < 0.0f)) {
+    //if ((pos[0].x >= 384.0f) || (pos[3].x < 0.0f) || (pos[0].y >= 224.0f) || (pos[3].y < 0.0f)) {
+    if ((pos[0].x >= 384.0f) || (pos[3].x < 0.0f)) {
         return 0;
     }
 
@@ -419,7 +420,8 @@ s32 ppgWriteQuadUseTrans(Vertex* pos, u32 col, PPGDataList* tb, s32 tix, s32 cix
                     tex_temp = texCode;
                 }
 
-                if ((qvtx[0].x < 384.0f) && (qvtx[3].x >= 0.0f) && (qvtx[0].y < 224.0f) && (qvtx[3].y >= 0.0f)) {
+                //if ((qvtx[0].x < 384.0f) && (qvtx[3].x >= 0.0f) && (qvtx[0].y < 224.0f) && (qvtx[3].y >= 0.0f)) {
+                if ((qvtx[0].x < 384.0f) && (qvtx[3].x >= 0.0f)) {
                     if (flip & 1) {
                         qvtx[3].u = (sx / ppgwf) - sadd;
                         qvtx[0].u = ((sx + xs) / ppgwf) - sadd;

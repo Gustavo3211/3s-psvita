@@ -15,11 +15,9 @@ static uint32_t bg_color = 0xFF000000;
 
 int my_gu_init = 0;
 
-// Keep at 1.0/0.0 — per-vertex SCALE_X/SCALE_Y handles fullscreen
-float Frame_Zoom_X = 1.0f;
-float Frame_Off_X = 0.0f;
-float Frame_Zoom_Y = 1.0f;
-float Frame_Off_Y = 0.0f;
+int Full_Screen = 0;
+
+// per-vertex SCALE_X/SCALE_Y handles fullscreen
 
 void enableOffscreenMode() { }
 
@@ -78,13 +76,19 @@ void startFrame(){
     sceGuClearDepth(0xFFFF);
     sceGuDisable(GU_SCISSOR_TEST);
     sceGuClear(GU_COLOR_BUFFER_BIT | GU_DEPTH_BUFFER_BIT);
-    // Clip to visible game area — 336x200 centered
-    sceGuScissor(48, 24, 48 + 336, 24 + 200);
     sceGuEnable(GU_SCISSOR_TEST);
     sceGuEnable(GU_TEXTURE_2D);
 }
 
 void endFrame(){
+    if(Full_Screen){
+        // Clip to visible game area — 336x200 centered
+        sceGuScissor(48, 24, 48 + 336, 24 + 200);
+    }
+    else{
+        // extend vertically game area
+        sceGuScissor(48, 4, 384, 248);
+    }
     sceGuFinish();
     sceGuSync(GU_SYNC_FINISH, GU_SYNC_WHAT_DONE);
     sceDisplayWaitVblankStart();
