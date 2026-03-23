@@ -1,3 +1,4 @@
+
 #include "graphics.h"
 #include "sprites.h"
 
@@ -15,7 +16,7 @@ static uint32_t bg_color = 0xFF000000;
 
 int my_gu_init = 0;
 
-int Full_Screen = 0;
+int Screen_Mode = 0;
 
 /* Scaling: default = fullscreen (aspect-preserving)
    CPS3 = 384x224, PSP = 480x272
@@ -25,19 +26,23 @@ float Scale_Factor_Y = 1.2143f;
 float Scale_Off_X = 7.0f;
 float Scale_Off_Y = 0.0f;
 
-void setupScaling(int fullscreen) {
-    if (fullscreen) {
-        /* Aspect-preserving scale to fill PSP height */
-        Scale_Factor_X = 272.0f / 224.0f;
-        Scale_Factor_Y = 272.0f / 224.0f;
-        Scale_Off_X = (480.0f - 384.0f * Scale_Factor_X) / 2.0f;
-        Scale_Off_Y = 0.0f;
-    } else {
-        /* Native resolution centered */
-        Scale_Factor_X = 1.0f;
-        Scale_Factor_Y = 1.0f;
-        Scale_Off_X = 48.0f;
-        Scale_Off_Y = 24.0f;
+void setupScaling() {
+    switch(Screen_Mode){
+        case SCREEN_MODE_FULLSCREEN:
+            Scale_Factor_X = 272.0f / 224.0f;
+            Scale_Factor_Y = 272.0f / 224.0f;
+            Scale_Off_X = (480.0f - 384.0f * Scale_Factor_X) / 2.0f;
+            Scale_Off_Y = 0.0f;
+            break;
+
+        case SCREEN_MODE_ORIGINAL:
+        case SCREEN_MODE_VERTICAL:
+            /* Native resolution centered */
+            Scale_Factor_X = 1.0f;
+            Scale_Factor_Y = 1.0f;
+            Scale_Off_X = 48.0f;
+            Scale_Off_Y = 24.0f;
+            break;
     }
 }
 
@@ -93,6 +98,8 @@ void endGu(){
 }
 
 void startFrame(){
+    setupScaling();
+
     sceGuStart(GU_DIRECT, list);
     sceGuClearColor(bg_color);
     sceGuClearDepth(0xFFFF);
@@ -101,8 +108,14 @@ void startFrame(){
     /* Clip to scaled game area — trim overscan on right edge only */
     s32 sx = (s32)SCALE_X(0);
     s32 sy = (s32)SCALE_Y(0);
-    s32 sw = (s32)(SCALE_X(384) - 5);
+    s32 sw = (s32)SCALE_X(384) - sx;
     s32 sh = (s32)SCALE_Y(224);
+
+    if(Screen_Mode == SCREEN_MODE_VERTICAL){
+        sy -= 16;
+        sh += 32;
+    }
+
     sceGuScissor(sx, sy, sw, sh);
     sceGuEnable(GU_SCISSOR_TEST);
     sceGuEnable(GU_TEXTURE_2D);

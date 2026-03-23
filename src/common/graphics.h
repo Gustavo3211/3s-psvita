@@ -29,7 +29,11 @@ extern "C" {
 #endif
 
 // variables
-extern int Full_Screen;
+extern int Screen_Mode;
+
+#define SCREEN_MODE_FULLSCREEN 0
+#define SCREEN_MODE_ORIGINAL 1
+#define SCREEN_MODE_VERTICAL 2
 
 // functions
 void initGu();
@@ -39,7 +43,6 @@ void startFrame();
 void endFrame();
 void endFrameDebug();
 void enableOffscreenMode();
-void setupScaling(int fullscreen);
 
 uint32_t getBgColor();
 void setBgColor(uint32_t color);

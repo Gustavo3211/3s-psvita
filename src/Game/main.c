@@ -83,7 +83,7 @@ void AcrMain() {
     flPADGetALL();
     keyConvert();
 
-    int full_screen_default;
+    int screen_mode_default;
 
     if(p1sw_buff){
         //DEMMA_DEBUG = 1;
@@ -96,16 +96,15 @@ void AcrMain() {
         Debug_w[DEBUG_BG_DRAW_OFF] = 1;
     }
     if(p1sw_buff & 0x8000){
-        full_screen_default = 0;
+        screen_mode_default = SCREEN_MODE_VERTICAL;
     }
     else{
-        full_screen_default = 1;
+        screen_mode_default = SCREEN_MODE_FULLSCREEN;
     }
-    setupScaling(full_screen_default);
 
     while (RUNNING) {
         initRenderState(0);
-        Full_Screen = full_screen_default;
+        Screen_Mode = screen_mode_default;
 
         mpp_w.ds_h[0] = mpp_w.ds_h[1];
         mpp_w.ds_v[0] = mpp_w.ds_v[1];

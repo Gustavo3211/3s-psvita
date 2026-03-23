@@ -205,7 +205,7 @@ void njdp2d_draw_0() {
                 vertices[k].z = vertices[j].z = njdp2d_w.prim[i].v[j].z * 0xFFFF;
                 vertices[k].colour = vertices[j].colour = njdp2d_w.prim[i].col;
                 if(njdp2d_w.prim[i].v[j].y >= 383.5f){
-                    Full_Screen = 1;
+                    Screen_Mode = SCREEN_MODE_ORIGINAL;
                 }
             }
             vertices[5].x = SCALE_X(njdp2d_w.prim[i].v[j].x);
