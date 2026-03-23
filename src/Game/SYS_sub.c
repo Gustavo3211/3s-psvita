@@ -1,6 +1,9 @@
 #include "Game/SYS_sub.h"
 #include "common.h"
 #include <pspdisplay.h>
+#include "psp/adx.h"
+#include "Game/sound/sound3rd.h"
+extern s16 bgm_half_down;
 #include "AcrSDK/common/mlPAD.h"
 //#include "sf33rd/AcrSDK/ps2/flps2debug.h"
 #include "fl.h"
@@ -1013,6 +1016,16 @@ void Soft_Reset_Sub() {
     task[TASK_INIT].r_no[3] = 0;
     vm_w.Request = 0;
     vm_w.Access = 0;
+
+    /* PSP: reset BGM state after soft reset. */
+    ADX_Stop();
+    ADX_Pause(0);
+    Init_bgm_work();
+    BGM_No[0] = 0;
+    BGM_No[1] = 0;
+    BGM_Vol = 0;
+    Music_Fade = 0;
+    bgm_half_down = 0;
 }
 
 void Reset_Sub0() {

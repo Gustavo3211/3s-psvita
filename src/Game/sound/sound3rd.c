@@ -235,17 +235,13 @@ void checkAdxFileLoaded() {
     adx_NowOnMemoryType = sys_w.bgm_type;
 }
 
-/** @brief Shut down the sound system — stop ADX and SPU. */
+/** @brief Reset sound system for mode transitions. */
 void Exit_sound_system() {
-    if (system_init_level & 2) {
-        ADX_Exit();
-        system_init_level &= ~2;
-    }
-
-    if (system_init_level & 1) {
-        spu_all_off();
-        system_init_level &= ~1;
-    }
+    ADX_Stop();
+    ADX_Pause(0);
+    Init_bgm_work();
+    current_bgm = 0;
+    bgm_half_down = 0;
 }
 
 /** @brief Clear the BGM execution + request work areas. */
@@ -270,8 +266,12 @@ void spu_all_off() {
 
 /** @brief Stop BGM (ADX) if currently playing. */
 static void sound_bgm_off() {
-    if ((system_init_level & 2) && (adx_now_playing() != 0)) {
-        SsBgmOff();
+    /* PSP: stop ADX directly instead of queuing through bgm_req.
+       SsBgmOff queues kind=1 which can overwrite pending play requests
+       from BGM_Request during soft reset transitions. */
+    if (system_init_level & 2) {
+        ADX_Stop();
+        current_bgm = 0;
     }
 }
 
@@ -416,6 +416,10 @@ void BGM_Server() {
 
     if (bgm_exe.code > 0 && bgm_exe.code < BGM_TABLE_SIZE) {
         bgm_vol_mix = bgm_level * bgm_table[sys_w.bgm_type][bgm_exe.code].vol / 15;
+    } else if (bgm_exe.code == 0) {
+        /* PSP: prevent stale bgm_vol_mix=0 from muting new BGM requests.
+           Use default volume when no track is active. */
+        bgm_vol_mix = bgm_level * 72 / 15;
     }
 
     switch (bgm_exe.kind) {
@@ -710,9 +714,9 @@ static void bgm_volume_setup(s16 data) {
     bhd = bgm_fade_ix;
     bgm_vol_now = bhd + bgm_vol_mix;
 
-    if (bgm_half_down) {
-        bgm_vol_now = 0;
-    }
+    /* PSP: bgm_half_down disabled — it gets stuck at 1 after soft reset
+       because the pause task sets it before the reset cleanup runs.
+       On arcade this mutes BGM during voice-overs, not needed on PSP. */
 
     if (bgm_vol_now > bgm_vol_mix) {
         bgm_vol_now = bgm_vol_mix;
@@ -724,10 +728,6 @@ static void bgm_volume_setup(s16 data) {
 
     if (bgm_vol_now >= ADX_VOLUME_TABLE_SIZE) {
         bgm_vol_now = ADX_VOLUME_TABLE_SIZE - 1;
-    }
-
-    if (Debug_w[DEBUG_PUB_BGM_OFF]) {
-        bgm_vol_now = 0;
     }
 
     ADX_SetOutVol(adx_volume[(s32)(bgm_vol_now * g_master_volume)]);
@@ -924,13 +924,13 @@ void Go_BGM() {
 
 /** @brief Stop BGM (bank=1 request). */
 void SsBgmOff() {
-    SoundRequestData rmcode;
-
-    rmcode.ptix = BGM_PTIX;
-    rmcode.bank = 1;
-    rmcode.port = 0;
-    rmcode.code = 0;
-    ProcessSoundRequest(&rmcode, 0);
+    /* PSP: stop ADX directly instead of queuing kind=1.
+       Queued stops race with new play requests during transitions. */
+    ADX_Stop();
+    bgm_exe.nowSeamless = 0;
+    ADX_ResetEntry();
+    current_bgm = 0;
+    bgm_exe.kind = 0;
 }
 
 /** @brief Start BGM with a fade-in effect (bank=6 request). */

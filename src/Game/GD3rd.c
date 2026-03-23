@@ -203,18 +203,7 @@ s32 fsCansel(REQ* /* unused */) {
 }
 
 s32 fsCheckCommandExecuting() {
-    s32 r = afsCheckRead();
-    if (r != 0) {
-        return 0;
-    }
-
-    /*
-    if (ADXF_GetStat(adxf) == ADXF_STAT_READING || ADXF_GetStat(adxf) == ADXF_STAT_ERROR) {
-        return 1;
-    }
-    */
-
-    return 0;
+    return afsCheckRead() ? 0 : 1;
 }
 
 s32 fsRequestFileRead(REQ* req, u32 sec, void* buff) {
@@ -461,30 +450,30 @@ s32 Push_LDREQ_Queue(REQ* ldreq) {
 
 void Check_LDREQ_Queue() {
     s16 i;
+    s16 iterations = 0;
 
     disp_ldreq_status();
 
-    if (!ldreq_break) {
-        if (q_ldreq->be != 0) {
-            ldreq_process[q_ldreq->type](q_ldreq);
-
-            if (q_ldreq->be == 0) {
-                for (i = 0; i < 23; i++) {
-                    q_ldreq[i] = q_ldreq[i + 1];
-                }
-
-                q_ldreq[i].be = 0;
-                q_ldreq[i].type = 0;
-            }
-
-            return;
-        }
-    } else {
+    if (ldreq_break) {
         if (q_ldreq->be == 1) {
             fsCansel(q_ldreq);
         }
-
         Init_Load_Request_Queue_1st();
+        return;
+    }
+
+    /* Process one state transition per frame. Async I/O runs in background,
+       so the main thread just kicks off reads and checks completion. */
+    if (q_ldreq->be != 0) {
+        ldreq_process[q_ldreq->type](q_ldreq);
+
+        if (q_ldreq->be == 0) {
+            for (i = 0; i < 23; i++) {
+                q_ldreq[i] = q_ldreq[i + 1];
+            }
+            q_ldreq[i].be = 0;
+            q_ldreq[i].type = 0;
+        }
     }
 }
 
