@@ -1664,7 +1664,7 @@ s32 seqsStoreChip(f32 x, f32 y, s32 w, s32 h, s32 gix, s32 code, s32 attr, s32 a
     njCalcPoint(NULL, &chip->v[1], &chip->v[1]);
 
     //if ((chip->v[0].x >= 384.0f) || (chip->v[1].x < 0.0f) || (chip->v[0].y >= 224.0f) || (chip->v[1].y < 0.0f)) {
-    if ((chip->v[0].x >= 384.0f) || (chip->v[1].x < 0.0f)) {
+    if ((chip->v[0].x >= Max_X) || (chip->v[1].x < Min_X) || (chip->v[0].y >= Max_Y) || (chip->v[1].y < Min_Y)) {
         return 1;
     }
 

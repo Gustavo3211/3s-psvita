@@ -157,7 +157,7 @@ void njDrawSprite(Polygon* polygon, s32 /* unused */, s32 tex, s32 /* unused */)
     Vertex vtx[4];
 
     //if ((polygon[0].x >= 384.0f) || (polygon[3].x < 0.0f) || (polygon[0].y >= 224.0f) || (polygon[3].y < 0.0f)) {
-    if ((polygon[0].x >= 384.0f) || (polygon[3].x < 0.0f)) {
+    if ((polygon[0].x >= Max_X) || (polygon[3].x < Min_X) || (polygon[0].y >= Max_Y) || (polygon[3].y < Min_Y)) {
         return;
     }
 
@@ -204,11 +204,6 @@ void njdp2d_draw_0() {
                 vertices[k].y = vertices[j].y = SCALE_Y(njdp2d_w.prim[i].v[j].y);
                 vertices[k].z = vertices[j].z = njdp2d_w.prim[i].v[j].z * 0xFFFF;
                 vertices[k].colour = vertices[j].colour = njdp2d_w.prim[i].col;
-                if(Screen_Mode == SCREEN_MODE_VERTICAL){
-                    if(njdp2d_w.prim[i].v[j].y >= 383.5f){
-                        Screen_Mode = SCREEN_MODE_ORIGINAL;
-                    }
-                }
             }
             vertices[5].x = SCALE_X(njdp2d_w.prim[i].v[j].x);
             vertices[5].y = SCALE_Y(njdp2d_w.prim[i].v[j].y);

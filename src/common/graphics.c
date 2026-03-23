@@ -26,6 +26,11 @@ float Scale_Factor_Y = 1.2143f;
 float Scale_Off_X = 7.0f;
 float Scale_Off_Y = 0.0f;
 
+float Min_X = 0.0f;
+float Max_X = 384.0f;
+float Min_Y = 0.0f;
+float Max_Y = 224.0f;
+
 void setupScaling() {
     switch(Screen_Mode){
         case SCREEN_MODE_FULLSCREEN:
@@ -33,15 +38,36 @@ void setupScaling() {
             Scale_Factor_Y = 272.0f / 224.0f;
             Scale_Off_X = (480.0f - 384.0f * Scale_Factor_X) / 2.0f;
             Scale_Off_Y = 0.0f;
+
+            Min_X = 0.0f;
+            Max_X = 384.0f;
+            Min_Y = 0.0f;
+            Max_Y = 224.0f;
             break;
 
         case SCREEN_MODE_ORIGINAL:
+            /* Native resolution centered */
+            Scale_Factor_X = 1.0f;
+            Scale_Factor_Y = 1.0f;
+            Scale_Off_X = 48.0f;
+            Scale_Off_Y = 24.0f;
+
+            Min_X = 0.0f;
+            Max_X = 384.0f;
+            Min_Y = 0.0f;
+            Max_Y = 224.0f;
+            break;
         case SCREEN_MODE_VERTICAL:
             /* Native resolution centered */
             Scale_Factor_X = 1.0f;
             Scale_Factor_Y = 1.0f;
             Scale_Off_X = 48.0f;
             Scale_Off_Y = 24.0f;
+
+            Min_X = 0.0f;
+            Max_X = 384.0f;
+            Min_Y = -16.0f;
+            Max_Y = 230.0f;
             break;
     }
 }
@@ -106,15 +132,10 @@ void startFrame(){
     sceGuDisable(GU_SCISSOR_TEST);
     sceGuClear(GU_COLOR_BUFFER_BIT | GU_DEPTH_BUFFER_BIT);
     /* Clip to scaled game area — trim overscan on right edge only */
-    s32 sx = (s32)SCALE_X(0);
-    s32 sy = (s32)SCALE_Y(0);
-    s32 sw = (s32)SCALE_X(384) - sx;
-    s32 sh = (s32)SCALE_Y(224);
-
-    if(Screen_Mode == SCREEN_MODE_VERTICAL){
-        sy -= 16;
-        sh += 32;
-    }
+    s32 sx = (s32)SCALE_X(Min_X);
+    s32 sy = (s32)SCALE_Y(Min_Y);
+    s32 sw = (s32)(Max_X - Min_X) * Scale_Factor_X;
+    s32 sh = (s32)(Max_Y - Min_Y) * Scale_Factor_Y;
 
     sceGuScissor(sx, sy, sw, sh);
     sceGuEnable(GU_SCISSOR_TEST);

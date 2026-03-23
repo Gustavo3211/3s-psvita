@@ -30,6 +30,10 @@ extern "C" {
 
 // variables
 extern int Screen_Mode;
+extern float Min_X;
+extern float Max_X;
+extern float Min_Y;
+extern float Max_Y;
 
 #define SCREEN_MODE_FULLSCREEN 0
 #define SCREEN_MODE_ORIGINAL 1
