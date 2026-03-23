@@ -58,6 +58,8 @@ void cpInitTask();
 void cpReadyTask(u16 num, void* func_adrs);
 void cpExitTask(u16 num);
 
+bool RUNNING = 1;
+
 int c_x, c_y, c_v_x = 1, c_v_y = 1;
 
 void AcrMain() {
@@ -100,7 +102,7 @@ void AcrMain() {
         full_screen_default = 1;
     }
 
-    while (1) {
+    while (RUNNING) {
         initRenderState(0);
         Full_Screen = full_screen_default;
 

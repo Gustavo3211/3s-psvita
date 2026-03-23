@@ -28,6 +28,8 @@ typedef enum TaskID {
 extern MPP mpp_w;             // size: 0x4C, address: 0x57A9F0
 extern s32 system_init_level; // size: 0x4, address: 0x57AA3C
 
+extern bool RUNNING;
+
 void AcrMain();
 void cpInitTask();
 void cpReadyTask(u16 num, void* func_adrs);

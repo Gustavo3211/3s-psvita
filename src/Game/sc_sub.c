@@ -933,7 +933,7 @@ void stun_put(u8 Pl_Num, u8 stun) {
     }
 
     ppgSetupCurrentDataList(&ppgScrList);
-    scrscrntex[0].z = scrscrntex[3].z = PrioBase[4];
+    scrscrntex[0].z = scrscrntex[3].z = PrioBase[3];
     njSetPaletteBankNumG(0, 10);
     scrscrntex[0].u = 0.0f;
     scrscrntex[3].u = 8.0f / 256.0f;
@@ -2278,10 +2278,10 @@ void dispButtonImage(s32 px, s32 py, s32 pz, s32 sx, s32 sy, s32 cl, s32 ix) {
     }
 
     setFilterMode(0);
-    vertices[0].x = SCALE_X(px);
-    vertices[0].y = SCALE_Y(py);
-    vertices[1].x = SCALE_X(px + sx);
-    vertices[1].y = SCALE_Y(py - sy);
+    vertices[0].x = (px);
+    vertices[0].y = (py);
+    vertices[1].x = (px + sx);
+    vertices[1].y = (py - sy);
     for(int i = 0; i < 2; i++){
         vecs[i].x = vertices[i].x;
         vecs[i].y = vertices[i].y;
@@ -2355,8 +2355,8 @@ void dispSaveLoadTitle(void* ewk) {
     flSetRenderState(FLRENDER_TEXSTAGE0, texCode);
     vertices[0].u = (short) 0.0f;
     vertices[3].u = (short) tex->width;
-    vertices[0].v = (short) (TO_UV_128(0.0f) * tex->height);
-    vertices[3].v = (short) (TO_UV_128(36.0f) * tex->height);
+    vertices[0].v = (short) 0.0f;
+    vertices[3].v = (short) 36.0f;
     step_t = 36.0f;
     pos[0].x = -192.0f;
     pos[0].y = -12.0f;
@@ -2369,7 +2369,7 @@ void dispSaveLoadTitle(void* ewk) {
         for(j = 0; j < 2; j++){
             pos[j + 2].x = vertices[j * 3].x;
             pos[j + 2].y = vertices[j * 3].y;
-            pos[j + 2].z = vertices[j * 3].z * 0xFFFF;
+            pos[j + 2].z = vertices[j * 3].z;
         }
         njCalcPoint(NULL, &pos[0], &pos[2]);
         njCalcPoint(NULL, &pos[1], &pos[3]);
@@ -2383,7 +2383,7 @@ void dispSaveLoadTitle(void* ewk) {
         sceGuDrawArray(GU_SPRITES, GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 2, 0, vertices);
         step_t += 36.0f;
         vertices[0].v = vertices[3].v;
-        vertices[3].v = step_t / 128.0f * tex->height;
+        vertices[3].v = step_t;
         pos[0].x += 128.0f;
         pos[1].x += 128.0f;
     }
