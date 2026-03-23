@@ -400,7 +400,6 @@ void SPU_PSP_CB(void* buf, unsigned int reqn, void* pdata) {
     static int cb_timer = 192;
     uint32_t step = ((uint32_t)SPU_TICK_RATE << 16) / PSP_AUDIO_RATE;
 
-
     if (spu_locked) {
         for (unsigned int i = 0; i < reqn; i++) {
             out[i * 2]     = 0;

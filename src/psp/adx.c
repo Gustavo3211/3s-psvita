@@ -88,11 +88,17 @@ static s32 parse_header(const u8 *h, s32 size) {
 
     P.loop_enabled = 0;
     u8 ver = h[0x12];
-    if (ver == 3 && size > 0x28) {
-        if (rb16(h + 0x16) == 1) {
+    if (ver == 3 && size > 0x2C) {
+        /* ADX v3 loop structure:
+           0x18: loop count (u32 BE) — non-zero = has loops
+           0x1C: loop start SAMPLE (u32 BE)
+           0x20: loop start BYTE offset from file start (u32 BE)
+           0x24: loop end SAMPLE (u32 BE)
+           0x28: loop end BYTE offset from file start (u32 BE) */
+        if (rb32(h + 0x18) != 0) {
             P.loop_enabled = 1;
-            P.loop_start_byte = (s32)rb32(h + 0x1C) - P.data_offset;
-            P.loop_end_byte = (s32)rb32(h + 0x24) - P.data_offset;
+            P.loop_start_byte = (s32)rb32(h + 0x20) - P.data_offset;
+            P.loop_end_byte = (s32)rb32(h + 0x28) - P.data_offset;
             if (P.loop_start_byte < 0) P.loop_start_byte = 0;
             if (P.loop_end_byte < 0) P.loop_end_byte = 0;
         }
@@ -234,15 +240,22 @@ static void adxPlayInternal(u16 fnum, s32 sync) {
     u8 *buf = (u8 *)memalign(16, file_size);
     if (!buf) return;
 
-    /* Cancel any pending async load */
+    /* Cancel any pending async load and stale preload */
     if (adx_load_buf) { free(adx_load_buf); adx_load_buf = NULL; }
     adx_loading = 0;
+    if (adx_next_buf) { free(adx_next_buf); adx_next_buf = NULL; }
+    adx_next_ready = 0;
+    adx_next_consumed = 0;
 
     if (sync) {
         if (!afsReadSync(fnum, buf, file_size)) {
             free(buf);
             return;
         }
+        /* Stop before parse — parse_header modifies P fields that the
+           callback reads. Without this, the callback decodes old audio
+           data with new coefficients/offsets → static blast. */
+        P.stat = ADX_STAT_STOP;
         if (parse_header(buf, file_size) < 0) {
             free(buf);
             return;
@@ -252,6 +265,8 @@ static void adxPlayInternal(u16 fnum, s32 sync) {
         P.buf = buf;
         P.buf_size = file_size;
         P.pos = 0;
+        blk_pos = blk_avail = 0;
+        resample_frac = 0;
         adx_buf_owned = 1;
         P.stat = ADX_STAT_PLAYING;
         if (old && old_owned) adx_free_pending = old;
@@ -439,6 +454,13 @@ void ADX_StartMem(void* data, u32 size) {
     if (P.buf && adx_buf_owned) { adx_free_pending = P.buf; }
     P.buf = NULL;
     P.pos = 0;
+
+    /* Clear stale seamless preload from previous track */
+    if (adx_next_buf) { free(adx_next_buf); adx_next_buf = NULL; }
+    adx_next_ready = 0;
+    adx_next_consumed = 0;
+    if (adx_load_buf) { free(adx_load_buf); adx_load_buf = NULL; }
+    adx_loading = 0;
 
     if (parse_header((u8*)data, size) < 0) return;
 
