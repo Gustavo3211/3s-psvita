@@ -52,13 +52,13 @@ float Scale_Off_Y = 0.0f;
 
 void setupScaling(int mode) {
     switch (mode) {
-    case 0: /* Stretch — fill entire PSP screen */
+    case SCREEN_MODE_FULLSCREEN: /* Stretch — fill entire PSP screen */
         blit_x0 = 0.0f;
         blit_y0 = 0.0f;
         blit_x1 = 480.0f;
         blit_y1 = 272.0f;
         break;
-    case 1: { /* 4:3 — arcade aspect, fill height */
+    case SCREEN_MODE_ORIGINAL: { /* 4:3 — arcade aspect, fill height */
         float w = 272.0f * (4.0f / 3.0f);
         blit_x0 = (480.0f - w) / 2.0f;
         blit_y0 = 0.0f;
@@ -66,7 +66,7 @@ void setupScaling(int mode) {
         blit_y1 = 272.0f;
         break;
     }
-    case 2: { /* 4:3 Native — arcade aspect at native height */
+    case SCREEN_MODE_VERTICAL: { /* 4:3 Native — arcade aspect at native height */
         float w = 224.0f * (4.0f / 3.0f);
         blit_x0 = (480.0f - w) / 2.0f;
         blit_y0 = (272.0f - 224.0f) / 2.0f;
@@ -74,7 +74,8 @@ void setupScaling(int mode) {
         blit_y1 = blit_y0 + 224.0f;
         break;
     }
-    default: /* Native — pixel perfect 384x224 centered */
+    case SCREEN_MODE_EXTENDED: /* Native — pixel perfect 384x224 centered */
+    default:
         blit_x0 = (480.0f - CPS3_WIDTH) / 2.0f;
         blit_y0 = (272.0f - CPS3_HEIGHT) / 2.0f;
         blit_x1 = blit_x0 + CPS3_WIDTH;
