@@ -9,9 +9,9 @@ s32 tarPADInit() {
     memset(tarpad_root, 0, sizeof(tarpad_root));
 
     for (int i = 0; i < 2; i++) {
-        tarpad_root[i].kind = 1;
+        tarpad_root[i].kind = 1 - i;    // so it detects pad 0 as connected and pad 1 as disconnected
         tarpad_root[i].anstate = 0x60;
-        tarpad_root[i].state = 1;
+        tarpad_root[i].state = i;
         tarpad_root[i].conn.port = i;
         tarpad_root[i].conn.slot = 0;
     }

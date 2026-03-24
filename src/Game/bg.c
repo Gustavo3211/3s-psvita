@@ -564,10 +564,10 @@ void scr_trans(u8 bgnm) {
     njScale(0, 1.0f, -1.0f, 1.0f);
     njTranslate(0, 0.0f, -224.0f, 0.0f);
     njScale(0, 1.0f / scr_sc, 1.0f / scr_sc, 1.0f);
-    point[0].x = 0.0f;
-    point[0].y = 0.0f;
+    point[0].x = Min_X;
+    point[0].y = Min_Y;
     point[0].z = 00.f;
-    point[1].x = 648.0f;
+    point[1].x = 648.0f / 384.0f * Max_X;
     point[1].y = 488.0f;
     point[1].z = 0.0f;
     njCalcPoints(0, &point[0], &point[0], 2);
@@ -1094,7 +1094,7 @@ void bgDrawOneChip(s32 x, s32 y, s32 xs, s32 ys, s32 gbix, u32 vtxCol, s32 ofsPa
         ppgCalScrPosition(x, y, xs, ys);
 
         //if ((scrDrawPos->x >= 384.0f) || (scrDrawPos[3].x < 0.0f) || (scrDrawPos->y >= 224.0f) || (scrDrawPos[3].y < 0.0f)) {
-        if ((scrDrawPos->x >= 384.0f) || (scrDrawPos[3].x < 0.0f)) {
+        if ((scrDrawPos->x >= Max_X) || (scrDrawPos[3].x < Min_X) || (scrDrawPos->y >= Max_Y) || (scrDrawPos[3].y < Min_Y)) {
             return;
         }
 

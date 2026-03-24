@@ -2162,10 +2162,10 @@ void op_bg0_0002(s16 r_index) {
     beta_poly.col = beta_col;
     beta_poly.num = 4;
     beta_col[0].color = beta_col[1].color = beta_col[2].color = beta_col[3].color = 0xFF000000;
-    beta_p[0].x = beta_p[2].x = 0.0f;
-    beta_p[1].x = beta_p[3].x = 384.0f;
-    beta_p[0].y = beta_p[1].y = 0.0f;
-    beta_p[2].y = beta_p[3].y = 224.0f;
+    beta_p[0].x = beta_p[2].x = Min_X;
+    beta_p[1].x = beta_p[3].x = Max_X;
+    beta_p[0].y = beta_p[1].y = Min_Y;
+    beta_p[2].y = beta_p[3].y = Max_Y;
 
     switch (opw_ptr->r_no_0) {
     case 0:
@@ -2259,10 +2259,10 @@ void op_bg0_0004(s16 r_index) {
     beta_poly.col = beta_col;
     beta_poly.num = 4;
     beta_col[0].color = beta_col[1].color = beta_col[2].color = beta_col[3].color = 0xFF000000;
-    beta_p[0].x = beta_p[2].x = 0.0f;
-    beta_p[1].x = beta_p[3].x = 384.0f;
-    beta_p[0].y = beta_p[1].y = 0.0f;
-    beta_p[2].y = beta_p[3].y = 224.0f;
+    beta_p[0].x = beta_p[2].x = Min_X;
+    beta_p[1].x = beta_p[3].x = Max_X;
+    beta_p[0].y = beta_p[1].y = Min_Y;
+    beta_p[2].y = beta_p[3].y = Max_Y;
 
     switch (opw_ptr->r_no_0) {
     case 0:

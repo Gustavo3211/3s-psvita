@@ -40,7 +40,6 @@ void startFrame();
 void endFrame();
 void endFrameDebug();
 void enableOffscreenMode();
-void setupScaling(int fullscreen);
 
 uint32_t getBgColor();
 void setBgColor(uint32_t color);

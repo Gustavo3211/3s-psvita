@@ -1,9 +1,11 @@
+
 #include "graphics.h"
 #include "sprites.h"
 #include <psprtc.h>
 
 //just for this project
 #include "Game/WORK_SYS.h"
+#include "Game/sc_data.h"
 
 
 extern void ppgResetTextureCache(void);
@@ -73,6 +75,16 @@ void setupScaling(int mode) {
         blit_y1 = blit_y0 + CPS3_HEIGHT;
         break;
     }
+
+    //Fade_Pos_tbl[8] = { 0, 0, 640, 0, 0, 448, 640, 448 }
+    Fade_Pos_tbl[0] = Min_X * 640 / 384;
+    Fade_Pos_tbl[1] = Min_Y * 488 / 224;
+    Fade_Pos_tbl[2] = Max_X * 640 / 384;
+    Fade_Pos_tbl[3] = Min_X * 640 / 384;
+    Fade_Pos_tbl[4] = Min_Y * 480 / 224;
+    Fade_Pos_tbl[5] = Max_Y * 480 / 224;
+    Fade_Pos_tbl[6] = Max_X * 640 / 384;
+    Fade_Pos_tbl[7] = Max_Y * 480 / 224;
 }
 
 void enableOffscreenMode() { }
@@ -133,6 +145,8 @@ void endGu(){
 typedef struct { float u, v; float x, y, z; } BlitVertex;
 
 void startFrame(){
+    setupScaling();
+
     sceGuStart(GU_DIRECT, list);
 
     if (RTT_Enabled) {

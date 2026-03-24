@@ -8,6 +8,8 @@
 #include "Game/workuser.h"
 #include "structs.h"
 
+#include "common/graphics.h"
+
 void (*scr_x_mv_jp[35])() = { scr_10_20,   scr_10_21,   scr_10_22,   scr_x_dummy, scr_x_dummy, scr_x_dummy, scr_x_dummy,
                               scr_x_dummy, scr_x_dummy, scr_x_dummy, scr_x_dummy, scr_x_dummy, scr_x_dummy, scr_x_dummy,
                               scr_x_dummy, scr_x_dummy, scr_11_20,   scr_11_21,   scr_11_22,   scr_x_dummy, scr_x_dummy,
@@ -558,22 +560,22 @@ void bg_base_x_move_sub() {
 
     work[1] -= bg_pos;
 
-    if (work[0] < 0) {
-        work[0] = 0;
-    } else if (work[0] > 0x17F) {
-        work[0] = 0x17F;
+    if (work[0] < Min_X) {
+        work[0] = Min_X;
+    } else if (work[0] > Max_X) {
+        work[0] = Max_X;
     }
 
-    if (work[1] < 0) {
-        work[1] = 0;
-    } else if (work[1] > 0x17F) {
-        work[1] = 0x17F;
+    if (work[1] < Min_X) {
+        work[1] = Min_X;
+    } else if (work[1] > Max_X) {
+        work[1] = Max_X;
     }
 
     for (i = 0; i < 2; i++) {
         if (0 <= work[i] && work[i] < 0x40) {
             st[i] = 1;
-        } else if (work[i] >= 0x140 && work[i] < 0x180) {
+        } else if (work[i] >= 0x140 && work[i] < Max_X) {
             st[i] = 2;
         } else {
             st[i] = 0;

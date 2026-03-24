@@ -7,6 +7,8 @@
 #include "Game/end_data.h"
 #include "Game/workuser.h"
 
+#include "common/graphics.h"
+
 void effect_E9_move(WORK_Other* ewk) {
     PAL_CURSOR ita;
     PAL_CURSOR_P ita_p[4];
@@ -21,26 +23,26 @@ void effect_E9_move(WORK_Other* ewk) {
     prio = PrioBase[ewk->wu.my_priority];
 
     if (ewk->wu.type < 2) {
-        ita_p[0].x = ita_p[1].x = 0.0f;
-        ita_p[2].x = ita_p[3].x = 384.0f;
+        ita_p[0].x = ita_p[1].x = Min_X;
+        ita_p[2].x = ita_p[3].x = Max_X;
 
         if (ewk->wu.type == 0) {
             ita_p[0].y = ita_p[3].y = 175.0f;
-            ita_p[1].y = ita_p[2].y = 224.0f;
+            ita_p[1].y = ita_p[2].y = Max_Y;
         } else {
-            ita_p[0].y = ita_p[3].y = 0.0f;
+            ita_p[0].y = ita_p[3].y = Min_Y;
             ita_p[1].y = ita_p[2].y = 33.0f;
         }
     } else {
-        ita_p[0].y = ita_p[2].y = 0.0f;
-        ita_p[1].y = ita_p[3].y = 224.0f;
+        ita_p[0].y = ita_p[2].y = Min_Y;
+        ita_p[1].y = ita_p[3].y = Max_Y;
 
         if (ewk->wu.type == 2) {
-            ita_p[0].x = ita_p[1].x = 0.0f;
-            ita_p[2].x = ita_p[3].x = 1.0f;
+            ita_p[0].x = ita_p[1].x = Min_X;
+            ita_p[2].x = ita_p[3].x = Min_X - 1;
         } else {
-            ita_p[0].x = ita_p[1].x = 384.0f;
-            ita_p[2].x = ita_p[3].x = 385.0f;
+            ita_p[0].x = ita_p[1].x = Max_X;
+            ita_p[2].x = ita_p[3].x = Max_X + 1;
         }
     }
 
@@ -68,11 +70,11 @@ void effect_E9_move(WORK_Other* ewk) {
 
         if (End_PL == 14 && ewk->wu.type < 2) {
             if (ewk->wu.type) {
-                ita_p[0].y = ita_p[3].y = 0.0f;
+                ita_p[0].y = ita_p[3].y = Min_Y;
                 ita_p[1].y = ita_p[2].y = (33.0f - ((33.0f * scr_sc) - 33.0f));
             } else {
-                ita_p[0].y = ita_p[3].y = (224.0f - (1.0f + (48.0f - ((48.0f * scr_sc) - 48.0f))));
-                ita_p[1].y = ita_p[2].y = 224.0f;
+                ita_p[0].y = ita_p[3].y = (Max_Y - (1.0f + (48.0f - ((48.0f * scr_sc) - 48.0f))));
+                ita_p[1].y = ita_p[2].y = Max_Y;
             }
         }
 
@@ -93,11 +95,11 @@ void effect_E9_move(WORK_Other* ewk) {
 
     case 2:
         if (ewk->wu.type) {
-            ita_p[0].y = ita_p[3].y = 0.0f;
+            ita_p[0].y = ita_p[3].y = Min_Y;
             ita_p[1].y = ita_p[2].y = 16.0f;
         } else {
             ita_p[0].y = ita_p[3].y = 207.0f;
-            ita_p[1].y = ita_p[2].y = 224.0f;
+            ita_p[1].y = ita_p[2].y = Max_Y;
         }
 
         if (!No_Trans) {

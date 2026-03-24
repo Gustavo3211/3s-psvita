@@ -83,7 +83,7 @@ void AcrMain() {
     flPADGetALL();
     keyConvert();
 
-    int full_screen_default;
+    int screen_mode_default;
 
     if(p1sw_buff){
         //DEMMA_DEBUG = 1;
@@ -96,16 +96,15 @@ void AcrMain() {
         Debug_w[DEBUG_BG_DRAW_OFF] = 1;
     }
     if(p1sw_buff & 0x8000){
-        full_screen_default = 2; /* Native */
+        screen_mode_default = SCREEN_MODE_VERTICAL;
     }
     else{
-        full_screen_default = 0; /* Stretch */
+        screen_mode_default = SCREEN_MODE_FULLSCREEN;
     }
-    setupScaling(full_screen_default);
 
     while (RUNNING) {
         initRenderState(0);
-        Full_Screen = full_screen_default;
+        Screen_Mode = screen_mode_default;
 
         mpp_w.ds_h[0] = mpp_w.ds_h[1];
         mpp_w.ds_v[0] = mpp_w.ds_v[1];
@@ -295,20 +294,20 @@ void MaskScreenEdge() {
 
     appViewGetItems(&prm);
 
-    if (prm.x1 < 384.0f) {
-        pos[0] = pos[4] = mpp_w.vprm.x1;
-        pos[2] = pos[6] = 384.0f;
-        pos[1] = pos[3] = mpp_w.vprm.y0;
-        pos[5] = pos[7] = 224.0f;
+    if (prm.x1 < Max_X) {
+        pos[0] = pos[4] = mpp_w.vprm.x1 - Min_X;
+        pos[2] = pos[6] = Max_X;
+        pos[1] = pos[3] = mpp_w.vprm.y0 - Min_Y;
+        pos[5] = pos[7] = Max_Y;
 
         njdp2d_sort(pos, PrioBase[0], (0xFF << 24), 0);
     }
 
-    if (prm.y1 < 224.0f) {
-        pos[0] = pos[4] = mpp_w.vprm.x0;
-        pos[2] = pos[6] = 384.0f;
-        pos[1] = pos[3] = mpp_w.vprm.y1;
-        pos[5] = pos[7] = 224.0f;
+    if (prm.y1 < Max_Y) {
+        pos[0] = pos[4] = mpp_w.vprm.x0 - Min_X;
+        pos[2] = pos[6] = Max_X;
+        pos[1] = pos[3] = mpp_w.vprm.y1 - Min_Y;
+        pos[5] = pos[7] = Max_Y;
 
         njdp2d_sort(pos, PrioBase[0], (0xFF << 24), 0);
     }
