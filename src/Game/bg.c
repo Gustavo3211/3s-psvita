@@ -564,10 +564,10 @@ void scr_trans(u8 bgnm) {
     njScale(0, 1.0f, -1.0f, 1.0f);
     njTranslate(0, 0.0f, -224.0f, 0.0f);
     njScale(0, 1.0f / scr_sc, 1.0f / scr_sc, 1.0f);
-    point[0].x = 0.0f;
-    point[0].y = 0.0f;
+    point[0].x = Min_X;
+    point[0].y = Min_Y;
     point[0].z = 00.f;
-    point[1].x = 648.0f;
+    point[1].x = 648.0f / 384.0f * Max_X;
     point[1].y = 488.0f;
     point[1].z = 0.0f;
     njCalcPoints(0, &point[0], &point[0], 2);

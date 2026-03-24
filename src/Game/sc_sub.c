@@ -1066,7 +1066,7 @@ s32 WipeIn(u8 type) {
             wipe_p[0].x = wipe_p[2].x = Min_X;
             wipe_p[1].x = wipe_p[3].x = Max_X;
 
-            for (i = 0; i < 224; i += 8) {
+            for (i = -Min_Y; i < Max_Y; i += 8) {
                 wipe_p[0].y = wipe_p[1].y = i;
                 wipe_p[2].y = wipe_p[3].y = ((i + 8) - (WipeLimit + 1));
                 njDrawPolygon2D(&wipe_pc, 4, PrioBase[0], 32);
@@ -1075,11 +1075,11 @@ s32 WipeIn(u8 type) {
             wipe_p[0].y = wipe_p[1].y = Min_Y;
             wipe_p[2].y = wipe_p[3].y = Max_Y;
 
-            for (i = -224; i < 384; i += 8) {
+            for (i = -Max_Y; i < Max_X; i += 8) {
                 wipe_p[0].x = i;
                 wipe_p[1].x = ((i + 8) - (WipeLimit + 1));
-                wipe_p[2].x = 224.0f + wipe_p[0].x;
-                wipe_p[3].x = 224.0f + wipe_p[1].x;
+                wipe_p[2].x = Max_Y + wipe_p[0].x;
+                wipe_p[3].x = Max_Y + wipe_p[1].x;
                 njDrawPolygon2D(&wipe_pc, 4, PrioBase[0], 32);
             }
         }
