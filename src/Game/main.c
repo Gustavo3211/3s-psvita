@@ -99,7 +99,7 @@ void AcrMain() {
         screen_mode_default = SCREEN_MODE_VERTICAL;
     }
     else{
-        screen_mode_default = SCREEN_MODE_EXTENDED;
+        screen_mode_default = SCREEN_MODE_FULLSCREEN;
     }
 
     while (RUNNING) {
