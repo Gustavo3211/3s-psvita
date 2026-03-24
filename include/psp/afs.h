@@ -40,4 +40,10 @@ s32 afsReadAsync(u16 fnum, void* buf, u32 size);
 /* Async: check if read is done (0=still reading, 1=done) */
 s32 afsCheckRead(void);
 
+/* Close fds on PSP suspend (unblocks hung I/O reads) */
+void afsSuspend(void);
+
+/* Re-open file descriptors after PSP sleep/resume */
+void afsReopen(void);
+
 #endif

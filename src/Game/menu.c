@@ -1,5 +1,6 @@
 #include "Game/menu.h"
 #include "common.h"
+#include "common/graphics.h"
 #include "Game/DIR_DATA.h"
 #include "Game/EFF10.h"
 #include "Game/EFF45.h"
@@ -130,6 +131,8 @@ void Return_Option_Mode_Sub(struct _TASK* task_ptr);
 void Screen_Adjust_Sub(s16 PL_id);
 void Screen_Exit_Check(struct _TASK* task_ptr, s16 PL_id);
 void Screen_Move_Sub_LR(u16 sw);
+s16 render_mode;
+extern s32 blit_filter;
 void Setup_Sound_Mode(u8 last_mode);
 u16 Sound_Cursor_Sub(s16 PL_id);
 u16 SD_Move_Sub_LR(u16 sw);
@@ -2054,21 +2057,29 @@ void Screen_Adjust(struct _TASK* task_ptr) {
         Order_Dir[0x65] = 8;
         Order_Timer[0x65] = 1;
 
-        for (ix = 0; ix < 5; ix++) {
-            effect_63_init(ix + 0x66, 0, 2, ix, ix);
-            Order[ix + 0x66] = 1;
-            Order_Dir[ix + 0x66] = 4;
-            Order_Timer[ix + 0x66] = ix + 0x14;
+        /* PSP: Render Mode, Filter, Default, Exit */
+        {
+            /* PSP: 4 menu items with effect_63 value displays */
+            /* Value bars: render mode (letter_type=5) and filter (letter_type=6) */
+            effect_63_init(0x66, 0, 2, 5, 0);  /* Row 0 value: render mode */
+            Order[0x66] = 1; Order_Dir[0x66] = 4; Order_Timer[0x66] = 0x14;
+
+            effect_63_init(0x67, 0, 2, 6, 1);  /* Row 1 value: filter */
+            Order[0x67] = 1; Order_Dir[0x67] = 4; Order_Timer[0x67] = 0x15;
+
+            /* Labels */
+            {
+                s16 screen_chars[4] = { 0xE, 0xF, 0x10, 0x11 }; /* RENDER MODE, FILTER, DEFAULT, EXIT */
+                for (ix = 0; ix < 4; ix++) {
+                    effect_61_init(0, ix + 0x50, 0, 2, screen_chars[ix], ix, 0x7047);
+                    Order[ix + 0x50] = 1;
+                    Order_Dir[ix + 0x50] = 4;
+                    Order_Timer[ix + 0x50] = ix + 0x14;
+                }
+            }
         }
 
-        for (ix = 0, unused_s3 = char_index = 0xE; ix < 7; ix++, unused_s2 = char_index++) {
-            effect_61_init(0, ix + 0x50, 0, 2, char_index, ix, 0x7047);
-            Order[ix + 0x50] = 1;
-            Order_Dir[ix + 0x50] = 4;
-            Order_Timer[ix + 0x50] = ix + 0x14;
-        }
-
-        Menu_Cursor_Move = 5;
+        Menu_Cursor_Move = 2;
         break;
 
     case 1:
@@ -2101,14 +2112,8 @@ void Screen_Adjust_Sub(s16 PL_id) {
     u16 sw;
     sw = ~plsw_01[PL_id] & plsw_00[PL_id];
     sw = Check_Menu_Lever(PL_id, 0);
-    MC_Move_Sub(sw, 0, 6, 0xFF);
+    MC_Move_Sub(sw, 0, 3, 0xFF);
     Screen_Move_Sub_LR(sw);
-    Convert_Buff[2][0][0] = X_Adjust_Buff[2] & 0xFF;
-    Convert_Buff[2][0][1] = Y_Adjust_Buff[2] & 0xFF;
-    Convert_Buff[2][0][2] = dspwhPack(Disp_Size_H, Disp_Size_V);
-    save_w[1].Screen_Size = dspwhPack(Disp_Size_H, Disp_Size_V);
-    Convert_Buff[2][0][3] = sys_w.screen_mode;
-    save_w[1].Screen_Mode = sys_w.screen_mode;
 }
 
 void Screen_Exit_Check(struct _TASK* task_ptr, s16 PL_id) {
@@ -2121,12 +2126,11 @@ void Screen_Exit_Check(struct _TASK* task_ptr, s16 PL_id) {
         return;
     }
 
-    if (Menu_Cursor_Y[0] == 6 || IO_Result == 0x200) {
+    /* PSP: Exit = cursor 3, Default = cursor 2 */
+    if (Menu_Cursor_Y[0] == 3 || IO_Result == 0x200) {
         SE_selected();
         Menu_Suicide[1] = 0;
         Menu_Suicide[2] = 1;
-        X_Adjust = X_Adjust_Buff[2];
-        Y_Adjust = Y_Adjust_Buff[2];
         Return_Option_Mode_Sub(task_ptr);
 
         if (task_ptr->r_no[0] == 1) {
@@ -2143,129 +2147,38 @@ void Screen_Exit_Check(struct _TASK* task_ptr, s16 PL_id) {
         return;
     }
 
-    if (Menu_Cursor_Y[PL_id] == 5) {
+    if (Menu_Cursor_Y[PL_id] == 2) {
+        /* Default = Stretch + Bilinear */
         SE_selected();
-        X_Adjust_Buff[2] = 0;
-        Y_Adjust_Buff[2] = 0;
-        Disp_Size_H = 100;
-        Disp_Size_V = 100;
-        sys_w.screen_mode = 1;
+        render_mode = 0;
+        setupScaling(0);
+        blit_filter = 0;
     }
 }
+
+/* PSP render modes: 0=Stretch, 1=4:3, 2=Native */
 
 void Screen_Move_Sub_LR(u16 sw) {
     s16 flag = 0;
 
-    if (sw == 4) {
-        switch (Menu_Cursor_Y[0]) {
-        case 0:
-            X_Adjust_Buff[2] -= 2;
-
-            if (X_Adjust_Buff[2] < -10) {
-                X_Adjust_Buff[2] = -10;
-            } else {
-                flag = 1;
-            }
-
-            break;
-
-        case 1:
-            Y_Adjust_Buff[2] -= 2;
-
-            if (Y_Adjust_Buff[2] < -10) {
-                Y_Adjust_Buff[2] = -10;
-            } else {
-                flag = 1;
-            }
-
-            break;
-
-        case 2:
-            Disp_Size_H -= 2;
-
-            if (Disp_Size_H < 94) {
-                Disp_Size_H = 94;
-            } else {
-                flag = 1;
-            }
-
-            break;
-
-        case 3:
-            Disp_Size_V -= 2;
-
-            if (Disp_Size_V < 94) {
-                Disp_Size_V = 94;
-            } else {
-                flag = 1;
-            }
-
-            break;
-
-        case 4:
-            sys_w.screen_mode = (sys_w.screen_mode + 1) & 1;
-            flag = 1;
-            break;
+    if (Menu_Cursor_Y[0] == 0 && (sw == 4 || sw == 8)) {
+        if (sw == 8) {
+            render_mode = (render_mode + 1) > 3 ? 0 : render_mode + 1;
+        } else {
+            render_mode = (render_mode - 1) < 0 ? 3 : render_mode - 1;
         }
-    } else if (sw == 8) {
-        switch (Menu_Cursor_Y[0]) {
-        case 0:
-            X_Adjust_Buff[2] += 2;
+        setupScaling(render_mode);
+        flag = 1;
+    }
 
-            if (X_Adjust_Buff[2] > 10) {
-                X_Adjust_Buff[2] = 10;
-            } else {
-                flag = 1;
-            }
-
-            break;
-
-        case 1:
-            Y_Adjust_Buff[2] += 2;
-
-            if (Y_Adjust_Buff[2] > 10) {
-                Y_Adjust_Buff[2] = 10;
-            } else {
-                flag = 1;
-            }
-
-            break;
-
-        case 2:
-            Disp_Size_H += 2;
-
-            if (Disp_Size_H > 100) {
-                Disp_Size_H = 100;
-            } else {
-                flag = 1;
-            }
-
-            break;
-
-        case 3:
-            Disp_Size_V += 2;
-
-            if (Disp_Size_V > 100) {
-                Disp_Size_V = 100;
-            } else {
-                flag = 1;
-            }
-
-            break;
-
-        case 4:
-            sys_w.screen_mode = (sys_w.screen_mode + 1) & 1;
-            flag = 1;
-            break;
-        }
+    if (Menu_Cursor_Y[0] == 1 && (sw == 4 || sw == 8)) {
+        blit_filter ^= 1;
+        flag = 1;
     }
 
     if (flag) {
         SE_dir_cursor_move();
     }
-
-    X_Adjust = X_Adjust_Buff[0] = X_Adjust_Buff[1] = X_Adjust_Buff[2];
-    Y_Adjust = Y_Adjust_Buff[0] = Y_Adjust_Buff[1] = Y_Adjust_Buff[2];
 }
 
 void Sound_Test(struct _TASK* task_ptr) {
