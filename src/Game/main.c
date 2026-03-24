@@ -96,10 +96,10 @@ void AcrMain() {
         Debug_w[DEBUG_BG_DRAW_OFF] = 1;
     }
     if(p1sw_buff & 0x8000){
-        full_screen_default = 0;
+        full_screen_default = 2; /* Native */
     }
     else{
-        full_screen_default = 1;
+        full_screen_default = 0; /* Stretch */
     }
     setupScaling(full_screen_default);
 
@@ -207,6 +207,11 @@ void AcrMain() {
         mpp_w.inGame = 0;
 
         njUserMain();
+
+        /* Expire unconsumed pause request — Pause_Check only runs during
+           gameplay, so clear the flag to prevent it lingering into the
+           next fight if sleep happened on a menu screen */
+        { extern volatile int g_request_pause; g_request_pause = 0; }
 
         MaskScreenEdge();
 

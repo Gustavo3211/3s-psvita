@@ -30,6 +30,7 @@ extern "C" {
 
 // variables
 extern int Full_Screen;
+extern int RTT_Enabled;
 
 // functions
 void initGu();

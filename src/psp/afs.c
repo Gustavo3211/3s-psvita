@@ -16,6 +16,11 @@ static volatile u16 io_fnum;
 static volatile void* io_buf;
 static volatile u32 io_size;
 static volatile s32 io_shutdown = 0;
+static volatile s32 afs_suspending = 0;  /* set during PSP sleep transition */
+
+/* Forward declarations for self-healing fd reopen */
+static void afs_reopen_sync_fd(void);
+static void afs_reopen_async_fd(void);
 
 static int afs_io_thread(SceSize args, void* argp) {
     (void)args; (void)argp;
@@ -42,6 +47,18 @@ static int afs_io_thread(SceSize args, void* argp) {
 
         sceIoLseek32(afs.async_fd, afs.entries[fnum].offset, PSP_SEEK_SET);
         s32 result = sceIoRead(afs.async_fd, buf, read_size);
+
+        /* Self-heal after PSP sleep — async fd may be stale.
+           Don't reopen if we're in the suspend transition — afsReopen()
+           handles it on RESUME_COMPLETE. */
+        if (result < 0 && !afs_suspending) {
+            afs_reopen_async_fd();
+            if (afs.async_fd >= 0) {
+                sceIoLseek32(afs.async_fd, afs.entries[fnum].offset, PSP_SEEK_SET);
+                result = sceIoRead(afs.async_fd, buf, read_size);
+            }
+        }
+
         afs.async_result = result;
         afs.async_busy = 0;
     }
@@ -121,6 +138,31 @@ void afsClose(void) {
     afs_ready = 0;
 }
 
+void afsSuspend(void) {
+    /* Called from power callback on SUSPENDING.
+       Close fds to unblock any hung sceIoRead in the I/O thread.
+       Reads will fail with EBADF instead of hanging forever. */
+    afs_suspending = 1;
+    if (afs.fd >= 0) { sceIoClose(afs.fd); afs.fd = -1; }
+    if (afs.async_fd >= 0) { sceIoClose(afs.async_fd); afs.async_fd = -1; }
+}
+
+void afsReopen(void) {
+    /* Re-open file descriptors after PSP sleep/resume. */
+    if (afs_path[0] == 0) return;
+
+    /* Close any leftover stale fds */
+    if (afs.fd >= 0) sceIoClose(afs.fd);
+    if (afs.async_fd >= 0) sceIoClose(afs.async_fd);
+
+    afs.fd = sceIoOpen(afs_path, PSP_O_RDONLY, 0);
+    afs.async_fd = sceIoOpen(afs_path, PSP_O_RDONLY, 0);
+    /* Force-clear async state — I/O thread may have been stuck */
+    afs.async_busy = 0;
+    afs.async_result = -1;
+    afs_suspending = 0;
+}
+
 u32 afsGetFileSize(u16 fnum) {
     if (fnum >= afs.entry_count) return 0;
     return afs.entries[fnum].size;
@@ -131,8 +173,22 @@ u32 afsGetSectorCount(u16 fnum) {
     return (size + SECTOR_SIZE - 1) / SECTOR_SIZE;
 }
 
+/* Try to reopen just the sync fd (thread-safe — only touches afs.fd) */
+static void afs_reopen_sync_fd(void) {
+    if (afs_path[0] == 0) return;
+    if (afs.fd >= 0) sceIoClose(afs.fd);
+    afs.fd = sceIoOpen(afs_path, PSP_O_RDONLY, 0);
+}
+
+/* Try to reopen just the async fd (called from I/O thread only) */
+static void afs_reopen_async_fd(void) {
+    if (afs_path[0] == 0) return;
+    if (afs.async_fd >= 0) sceIoClose(afs.async_fd);
+    afs.async_fd = sceIoOpen(afs_path, PSP_O_RDONLY, 0);
+}
+
 s32 afsReadSync(u16 fnum, void* buf, u32 size) {
-    if (fnum >= afs.entry_count || afs.fd < 0) return 0;
+    if (fnum >= afs.entry_count || !afs_ready) return 0;
     if (afs.entries[fnum].size == 0) return 0;
 
     u32 read_size = size;
@@ -140,34 +196,26 @@ s32 afsReadSync(u16 fnum, void* buf, u32 size) {
         read_size = afs.entries[fnum].size;
     }
 
+    if (afs.fd < 0) afs_reopen_sync_fd();
+    if (afs.fd < 0) return 0;
+
     sceIoLseek32(afs.fd, afs.entries[fnum].offset, PSP_SEEK_SET);
     s32 read = sceIoRead(afs.fd, buf, read_size);
+
+    /* Self-heal after PSP sleep — fd may be stale */
+    if (read < 0) {
+        afs_reopen_sync_fd();
+        if (afs.fd < 0) return 0;
+        sceIoLseek32(afs.fd, afs.entries[fnum].offset, PSP_SEEK_SET);
+        read = sceIoRead(afs.fd, buf, read_size);
+    }
+
     return (read >= 0) ? 1 : 0;
 }
 
 s32 afsReadAsync(u16 fnum, void* buf, u32 size) {
-    if (fnum >= afs.entry_count || afs.async_fd < 0) return 0;
-    if (afs.entries[fnum].size == 0) return 0;
-
-    /* If I/O thread isn't running, fall back to sync */
-    if (io_thread_id < 0) {
-        return afsReadSync(fnum, buf, size);
-    }
-
-    /* Wait for any previous async read to finish */
-    while (afs.async_busy) {
-        sceKernelDelayThread(100);
-    }
-
-    afs.async_busy = 1;
-    afs.async_result = 0;
-    io_fnum = fnum;
-    io_buf = buf;
-    io_size = size;
-
-    /* Wake the I/O thread */
-    sceKernelSignalSema(io_sema, 1);
-    return 1;
+    /* Fall back to sync — async I/O thread can deadlock on PSP sleep/resume */
+    return afsReadSync(fnum, buf, size);
 }
 
 s32 afsCheckRead(void) {

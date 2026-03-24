@@ -16,12 +16,16 @@ void EFF63_SUDDENLY(WORK_Other_CONN* /* unused */);
 void Disp_63_Sub(WORK_Other_CONN* ewk);
 void Setup_Letter_63(WORK_Other_CONN* ewk, s16 disp_index);
 
-const s8* Letter_Data_63[3][21] = { { "-10", "-9", "-8", "-7", "-6", "-5", "-4", "-3", "-2", "-1", "0",
+const s8* Letter_Data_63[5][21] = { { "-10", "-9", "-8", "-7", "-6", "-5", "-4", "-3", "-2", "-1", "0",
                                       "1",   "2",  "3",  "4",  "5",  "6",  "7",  "8",  "9",  "10" },
                                     { "94%", "96%", "98%", "100%", NULL, NULL, NULL, NULL, NULL, NULL, NULL,
                                       NULL,  NULL,  NULL,  NULL,   NULL, NULL, NULL, NULL, NULL, NULL },
                                     { "OFF", "ON", NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-                                      NULL,  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL } };
+                                      NULL,  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL },
+                                    { "STRETCH", "4:3", "4:3 NATIVE", "NATIVE", NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+                                      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL },
+                                    { "BILINEAR", "NEAREST", NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+                                      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL } };
 
 void (*const EFF63_Jmp_Tbl[4])() = { EFF63_WAIT, EFF63_SLIDE_IN, EFF63_CHAR_CHANGE, EFF63_SUDDENLY };
 
@@ -141,6 +145,18 @@ s32 effect_63_init(u8 dir_old, s16 sync_bg, s16 master_player, s16 letter_type, 
         ewk->wu.dir_step = 1;
         break;
 
+    case 4:
+        ewk->wu.dir_step = 2;
+        break;
+
+    case 5:
+        ewk->wu.dir_step = 3;  /* render mode names */
+        break;
+
+    case 6:
+        ewk->wu.dir_step = 4;  /* filter names */
+        break;
+
     default:
         ewk->wu.dir_step = 2;
         break;
@@ -154,30 +170,25 @@ s32 effect_63_init(u8 dir_old, s16 sync_bg, s16 master_player, s16 letter_type, 
     return 0;
 }
 
+extern s16 render_mode;
+extern s32 blit_filter;
+
 void Disp_63_Sub(WORK_Other_CONN* ewk) {
     s16 disp_index;
 
     switch (ewk->wu.type) {
     case 0:
-        disp_index = (s16)X_Adjust + 10;
+        /* PSP: render mode (dir_step=3) */
+        disp_index = render_mode;
         break;
 
     case 1:
-        disp_index = (s16)Y_Adjust + 10;
-        break;
-
-    case 2:
-        disp_index = (s16)Disp_Size_H - 94;
-        disp_index >>= 1;
-        break;
-
-    case 3:
-        disp_index = (s16)Disp_Size_V - 94;
-        disp_index >>= 1;
+        /* PSP: filter mode (dir_step=4) */
+        disp_index = (s16)blit_filter;
         break;
 
     default:
-        disp_index = sys_w.screen_mode;
+        disp_index = 0;
         break;
     }
 

@@ -145,6 +145,13 @@ static void SPU_VoiceRunADSR(SPU_Voice* v) {
         }
     } else if (pc->exp && pc->decr) {
         level_inc = (level_inc * v->envx) >> 15;
+        /* Prevent exponential decay from stalling at low envx.
+           Integer truncation makes level_inc=0 when envx < 4096,
+           causing the voice to never reach 0. PS2 hardware doesn't
+           have this issue. Ensure minimum decay of -1. */
+        if (level_inc == 0 && v->envx > 0) {
+            level_inc = -1;
+        }
     }
 
     if (!pc->infinite) {
@@ -367,7 +374,17 @@ void SPU_Tick(s16* output) {
         int i = __builtin_ctzll(mask);
         mask &= mask - 1;
 
-        if (count >= MAX_ACTIVE_VOICES) break; // Cap voices for PSP CPU budget
+        if (count >= MAX_ACTIVE_VOICES) {
+            /* CPU budget exceeded — still run ADSR so voices can complete
+               release and free their slots. Without this, excess voices
+               freeze mid-sound and never finish → sounds last too long. */
+            SPU_VoiceRunADSR(&voices[i]);
+            if (voices[i].adsr_phase > ADSR_PHASE_RELEASE) {
+                voices[i].run = false;
+                active_voices &= ~(1ULL << i);
+            }
+            continue;
+        }
 
         s32 last_voice_sample = 0;
         if (i > 0 && voices[i].pmon) {

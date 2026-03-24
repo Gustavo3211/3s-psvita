@@ -363,7 +363,6 @@ void ADX_Stop(void) {
 
 void ADX_StartAfs(s32 fnum) {
     adx_paused = 0;
-    P.volume = 127;
     adxPlay((u16)fnum);
 }
 
@@ -438,7 +437,6 @@ static void adx_preload_next_segment(void) {
 
 void ADX_StartSeamless(void) {
     adx_paused = 0;
-    P.volume = 127;
 
     if (adx_entry_count > 0) {
         adxPlaySync((u16)adx_entry_queue[0]);
@@ -475,7 +473,6 @@ void ADX_StartMem(void* data, u32 size) {
     blk_pos = blk_avail = 0;
     resample_frac = 0;
     adx_buf_owned = 0;  /* static buffer, don't free */
-    P.volume = 127;
     P.stat = ADX_STAT_PLAYING;
     adx_paused = 0;
 }
@@ -513,7 +510,20 @@ void ADX_ResetEntry(void) {
 
 void ADX_Pause(s32 pause) {
     adx_paused = pause;
-    /* TODO: actually pause/resume the audio thread */
+}
+
+/* Suspend/resume for PSP sleep — called from power callback thread */
+static volatile s32 adx_was_playing = 0;
+
+void adxSuspend(void) {
+    adx_was_playing = (P.stat == ADX_STAT_PLAYING && !adx_paused);
+    adx_paused = 1;  /* silence callback immediately */
+}
+
+void adxResume(void) {
+    if (adx_was_playing) {
+        adx_paused = 0;  /* restore playback */
+    }
 }
 
 s32 ADX_IsPaused(void) {

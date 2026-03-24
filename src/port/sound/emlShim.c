@@ -188,7 +188,9 @@ static int GetLfoVal(struct LFO* lfo) {
 void emlShimWorkTick() {
     struct VWork *i, *n;
 
-    SPU_Lock();
+    /* No SPU_Lock here — called from audio callback via timer_cb.
+       PSP semaphore is not recursive; locking would deadlock if
+       game thread holds the lock during an audio callback. */
 
     list_for_each (i, &active_voices, list) {
         i->tick++;
@@ -208,8 +210,6 @@ void emlShimWorkTick() {
             list_insert(&free_voices, &i->list);
         }
     }
-
-    SPU_Unlock();
 }
 
 void emlShimInit() {
@@ -218,7 +218,7 @@ void emlShimInit() {
     list_init(&active_voices);
     list_init(&free_voices);
 
-    SPU_Init(NULL);
+    SPU_Init(emlShimWorkTick);
 
     SPU_Lock();
 
