@@ -21,6 +21,12 @@ static void * rttBuf;
 
 static uint32_t bg_color = 0xFF000000;
 
+/* CPS3 clipping bounds — used by decompiled game code (bg.c, DC_Ghost.c, etc.) */
+float Min_X = 0.0f;
+float Max_X = 384.0f;
+float Min_Y = 0.0f;
+float Max_Y = 224.0f;
+
 int my_gu_init = 0;
 int Full_Screen = 0;
 int RTT_Enabled = 1;  /* 0=direct rendering, 1=RTT (no seams) */
@@ -145,7 +151,7 @@ void endGu(){
 typedef struct { float u, v; float x, y, z; } BlitVertex;
 
 void startFrame(){
-    setupScaling();
+    setupScaling(render_mode);
 
     sceGuStart(GU_DIRECT, list);
 

@@ -190,7 +190,7 @@ static void decode_next_sample(void) {
         blk_avail = P.spb;
     }
 
-    s32 vol = P.volume;
+    s32 vol = (P.volume * 3) >> 2;  /* ~75% — BGM sits behind SFX */
     last_l = (s16)((blk_buf[0][blk_pos] * vol) >> 7);
     last_r = (P.channels == 2) ? (s16)((blk_buf[1][blk_pos] * vol) >> 7) : last_l;
     blk_pos++;
