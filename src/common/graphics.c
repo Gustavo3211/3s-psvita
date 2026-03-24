@@ -4,6 +4,7 @@
 
 //just for this project
 #include "Game/WORK_SYS.h"
+#include "Game/sc_data.h"
 
 // variables
 static unsigned int __attribute__((aligned(64))) list[0x20000];
@@ -83,6 +84,16 @@ void setupScaling() {
             Max_Y = 272.0f;
             break;
     }
+
+    //Fade_Pos_tbl[8] = { 0, 0, 640, 0, 0, 448, 640, 448 }
+    Fade_Pos_tbl[0] = Min_X * 640 / 384;
+    Fade_Pos_tbl[1] = Min_Y * 488 / 224;
+    Fade_Pos_tbl[2] = Max_X * 640 / 384;
+    Fade_Pos_tbl[3] = Min_X * 640 / 384;
+    Fade_Pos_tbl[4] = Min_Y * 480 / 224;
+    Fade_Pos_tbl[5] = Max_Y * 480 / 224;
+    Fade_Pos_tbl[6] = Max_X * 640 / 384;
+    Fade_Pos_tbl[7] = Max_Y * 480 / 224;
 }
 
 void enableOffscreenMode() { }

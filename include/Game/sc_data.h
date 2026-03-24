@@ -13,7 +13,7 @@ extern const u8 smark_kind_tbl[3];
 extern const u8 combo_mtbl[7][3];
 extern const u8 Player_Name_Pos_TBL[21][2];
 extern const u8 Max_Pos_TBL[2][2];
-extern const s16 Fade_Pos_tbl[8];
+extern s16 Fade_Pos_tbl[8];
 extern const s16 Akaobi_Pos_tbl[8];
 extern const u8 Face_Pos_TBL[21][2];
 extern const u8 Grade_Pos_TBL[32][2];
