@@ -1244,11 +1244,11 @@ s32 Ck_Range_Out_S(WORK_Other* ewk, s16 BG_No, s16 R) {
 
     x = ewk->wu.xyz[0].disp.pos - bg_w.bgw[BG_No].wxy[0].disp.pos;
 
-    if (x < Min_X/2) {
+    if (x < 0) {
         x = -x;
     }
 
-    if (x - R > Max_X/2) {
+    if (x - R > 192) {
         return 1;
     }
 
