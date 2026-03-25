@@ -83,8 +83,6 @@ void AcrMain() {
     flPADGetALL();
     keyConvert();
 
-    int screen_mode_default;
-
     if(p1sw_buff){
         //DEMMA_DEBUG = 1;
         DEMMA_DEBUG = 0;
@@ -96,15 +94,15 @@ void AcrMain() {
         Debug_w[DEBUG_BG_DRAW_OFF] = 1;
     }
     if(p1sw_buff & 0x8000){
-        screen_mode_default = SCREEN_MODE_VERTICAL;
+        render_mode = SCREEN_MODE_VERTICAL;
     }
     else{
-        screen_mode_default = SCREEN_MODE_FULLSCREEN;
+        render_mode = SCREEN_MODE_FULLSCREEN;
     }
+    setupScaling(render_mode);
 
     while (RUNNING) {
         initRenderState(0);
-        Screen_Mode = screen_mode_default;
 
         mpp_w.ds_h[0] = mpp_w.ds_h[1];
         mpp_w.ds_v[0] = mpp_w.ds_v[1];
@@ -206,6 +204,11 @@ void AcrMain() {
         mpp_w.inGame = 0;
 
         njUserMain();
+
+        /* Expire unconsumed pause request — Pause_Check only runs during
+           gameplay, so clear the flag to prevent it lingering into the
+           next fight if sleep happened on a menu screen */
+        { extern volatile int g_request_pause; g_request_pause = 0; }
 
         MaskScreenEdge();
 

@@ -28,17 +28,20 @@ extern float Scale_Off_Y;
 extern "C" {
 #endif
 
-// variables
-extern int Screen_Mode;
-extern float Min_X;
-extern float Max_X;
-extern float Min_Y;
-extern float Max_Y;
-
+// Screen mode enums
 #define SCREEN_MODE_FULLSCREEN 0
-#define SCREEN_MODE_ORIGINAL 1
-#define SCREEN_MODE_VERTICAL 2
-#define SCREEN_MODE_EXTENDED 3
+#define SCREEN_MODE_ORIGINAL   1
+#define SCREEN_MODE_VERTICAL   2
+#define SCREEN_MODE_EXTENDED   3
+
+// CPS3 clipping bounds (used by decompiled game code)
+extern float Min_X, Max_X, Min_Y, Max_Y;
+
+extern s16 render_mode;
+
+// variables
+extern int Full_Screen;
+extern int RTT_Enabled;
 
 // functions
 void initGu();

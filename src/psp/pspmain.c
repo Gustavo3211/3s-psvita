@@ -4,6 +4,7 @@
 #include "common/audio.h"
 #include "common/graphics.h"
 #include "psp/adx.h"
+#include "psp/afs.h"
 #include <pspaudiolib.h>
 
 #include "Game/main.h"
@@ -18,11 +19,26 @@ PSP_HEAP_THRESHOLD_SIZE_KB(1024);
 // global variables
 volatile int g_request_pause = 0;
 
+extern void adxSuspend(void);
+extern void adxResume(void);
+
 int power_callback(int unknown, int powerInfo, void *common) {
     if (powerInfo & PSP_POWER_CB_SUSPENDING) {
+        /* Silence audio callback during sleep */
+        adxSuspend();
+        /* Close AFS fds — prevents stale fd reads */
+        afsSuspend();
+        /* Trigger in-game pause on resume */
         g_request_pause = 1;
     }
     if (powerInfo & PSP_POWER_CB_RESUME_COMPLETE) {
+        /* Proactively reopen AFS fds — sceIoRead on stale fd may hang
+           rather than return error on some firmware */
+        afsReopen();
+        /* Restore 333MHz — OS may reset clock after sleep */
+        scePowerSetClockFrequency(333, 333, 166);
+        /* Resume audio playback */
+        adxResume();
     }
     return 0;
 }
@@ -54,8 +70,7 @@ int main(void)  {
     // Use above functions to make exiting possible
     setup_callbacks();
 
-    // DEMMA imma test it without overclock
-    //scePowerSetClockFrequency(300, 300, 150);
+    scePowerSetClockFrequency(333, 333, 166);
 
     initGu();
 

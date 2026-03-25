@@ -32,6 +32,11 @@
 void* currentTexture = NULL;
 s32 currentPalette = -1;
 
+void ppgResetTextureCache(void) {
+    currentTexture = NULL;
+    currentPalette = -1;
+}
+
 typedef struct {
     Vec3 v;
     TexCoord t;
@@ -149,6 +154,7 @@ void ppgWriteQuadOnly(Vertex* pos, u32 col, u32 texCode) {
 
     if(DEMMA_DEBUG || skip_frame)
         return;
+
 
     vertices = (TextureVertex*)sceGuGetMemory(4 * sizeof(TextureVertex));
     texture_handle = LO_16_BITS(texCode) - 1;
