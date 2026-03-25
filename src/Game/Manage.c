@@ -132,6 +132,9 @@ s16 Check_Time_Over();
 void complete_victory_pause();
 void Game_Manage_13th();
 
+// from graphics.c
+extern int RTT_Enabled;
+
 u8 Disp_Bonus_Contents;
 s8 MANAGE_X;
 
@@ -1923,6 +1926,9 @@ void Game_Manage_12th() {
     SC12_Jmp_Tbl[C_No[1]]();
 
     if (Bonus_Type == 20) {
+        // if in car bonus, clock is set to 300
+        if(!RTT_Enabled)
+            setClock(CLOCK_300);
         bcounter_write();
     }
 }

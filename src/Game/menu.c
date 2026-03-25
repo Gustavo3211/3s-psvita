@@ -2057,20 +2057,23 @@ void Screen_Adjust(struct _TASK* task_ptr) {
         Order_Dir[0x65] = 8;
         Order_Timer[0x65] = 1;
 
-        /* PSP: Render Mode, Filter, Default, Exit */
+        /* PSP: Render Mode, Filter Mode, Scaling Mode, Default, Exit */
         {
             /* PSP: 4 menu items with effect_63 value displays */
             /* Value bars: render mode (letter_type=5) and filter (letter_type=6) */
             effect_63_init(0x66, 0, 2, 5, 0);  /* Row 0 value: render mode */
             Order[0x66] = 1; Order_Dir[0x66] = 4; Order_Timer[0x66] = 0x14;
 
-            effect_63_init(0x67, 0, 2, 6, 1);  /* Row 1 value: filter */
+            effect_63_init(0x67, 0, 2, 6, 1);  /* Row 1 value: filter mode */
             Order[0x67] = 1; Order_Dir[0x67] = 4; Order_Timer[0x67] = 0x15;
+
+            effect_63_init(0x68, 0, 2, 7, 2);  /* Row 2 value: scaling mode */
+            Order[0x68] = 1; Order_Dir[0x68] = 4; Order_Timer[0x68] = 0x16;
 
             /* Labels */
             {
-                s16 screen_chars[4] = { 0xE, 0xF, 0x10, 0x11 }; /* RENDER MODE, FILTER, DEFAULT, EXIT */
-                for (ix = 0; ix < 4; ix++) {
+                s16 screen_chars[5] = { 0xE, 0xF, 0x10, 0x11, 0x12}; /* RENDER MODE, FILTER MODE, SCALING MODE, DEFAULT, EXIT */
+                for (ix = 0; ix < 5; ix++) {
                     effect_61_init(0, ix + 0x50, 0, 2, screen_chars[ix], ix, 0x7047);
                     Order[ix + 0x50] = 1;
                     Order_Dir[ix + 0x50] = 4;
@@ -2112,7 +2115,7 @@ void Screen_Adjust_Sub(s16 PL_id) {
     u16 sw;
     sw = ~plsw_01[PL_id] & plsw_00[PL_id];
     sw = Check_Menu_Lever(PL_id, 0);
-    MC_Move_Sub(sw, 0, 3, 0xFF);
+    MC_Move_Sub(sw, 0, 4, 0xFF);
     Screen_Move_Sub_LR(sw);
 }
 
@@ -2126,8 +2129,11 @@ void Screen_Exit_Check(struct _TASK* task_ptr, s16 PL_id) {
         return;
     }
 
-    /* PSP: Exit = cursor 3, Default = cursor 2 */
-    if (Menu_Cursor_Y[0] == 3 || IO_Result == 0x200) {
+    /* PSP:
+        Exit = cursor 4
+        Default = cursor 3
+    */
+    if (Menu_Cursor_Y[0] == 4 || IO_Result == 0x200) {
         SE_selected();
         Menu_Suicide[1] = 0;
         Menu_Suicide[2] = 1;
@@ -2147,12 +2153,13 @@ void Screen_Exit_Check(struct _TASK* task_ptr, s16 PL_id) {
         return;
     }
 
-    if (Menu_Cursor_Y[PL_id] == 2) {
-        /* Default = Stretch + Bilinear */
+    if (Menu_Cursor_Y[PL_id] == 3) {
+        /* Default = Stretch + Bilinear + SMOOTH*/
         SE_selected();
         render_mode = 0;
         setupScaling(0);
         blit_filter = 0;
+        RTT_Enabled = 1;
     }
 }
 
@@ -2161,6 +2168,11 @@ void Screen_Exit_Check(struct _TASK* task_ptr, s16 PL_id) {
 void Screen_Move_Sub_LR(u16 sw) {
     s16 flag = 0;
 
+    /* PSP:
+        Render Mode = cursor 0
+        Filtering Mode = cursor 1
+        Scaling Mode = cursor 2
+    */
     if (Menu_Cursor_Y[0] == 0 && (sw == 4 || sw == 8)) {
         if (sw == 8) {
             render_mode = (render_mode + 1) > 3 ? 0 : render_mode + 1;
@@ -2173,6 +2185,11 @@ void Screen_Move_Sub_LR(u16 sw) {
 
     if (Menu_Cursor_Y[0] == 1 && (sw == 4 || sw == 8)) {
         blit_filter ^= 1;
+        flag = 1;
+    }
+
+    if (Menu_Cursor_Y[0] == 2 && (sw == 4 || sw == 8)) {
+        RTT_Enabled ^= 1;
         flag = 1;
     }
 

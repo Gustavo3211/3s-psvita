@@ -16,6 +16,13 @@ typedef enum TaskID {
     TASK_DEBUG = 9,
 } TaskID;
 
+enum {
+    CLOCK_222 = 0
+    , CLOCK_266
+    , CLOCK_300
+    , CLOCK_333
+};
+
 #define INIT_TASK_NUM 0
 #define ENTRY_TASK_NUM 1
 #define RESET_TASK_NUM 2

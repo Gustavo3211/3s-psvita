@@ -31,6 +31,7 @@ src/Game/menu.c:
 -daouid
 -demmis98
 -gibletto
+-Kinu Nishimura (banner artwork)
 
 
 thanks to everyone following this proyect

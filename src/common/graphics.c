@@ -51,35 +51,100 @@ float Scale_Off_X = 0.0f;
 float Scale_Off_Y = 0.0f;
 
 void setupScaling(int mode) {
-    switch (mode) {
+    if(RTT_Enabled){
+        switch (mode) {
+        case SCREEN_MODE_FULLSCREEN: /* Stretch — fill entire PSP screen */
+            blit_x0 = 0.0f;
+            blit_y0 = 0.0f;
+            blit_x1 = 480.0f;
+            blit_y1 = 272.0f;
+            break;
+        case SCREEN_MODE_ORIGINAL: { /* 1:1 pixel perfect */
+            blit_x0 = (480.0f - CPS3_WIDTH) / 2.0f;
+            blit_y0 = (272.0f - CPS3_HEIGHT) / 2.0f;
+            blit_x1 = blit_x0 + CPS3_WIDTH;
+            blit_y1 = blit_y0 + CPS3_HEIGHT;
+            break;
+        }
+        case SCREEN_MODE_VERTICAL: { /* 4:3 filling height / 1:1 pixels with extended viewport */
+            float w = 272.0f * (4.0f / 3.0f);
+            blit_x0 = (480.0f - w) / 2.0f;
+            blit_y0 = 0.0f;
+            blit_x1 = blit_x0 + w;
+            blit_y1 = 272.0f;
+            break;
+        }
+        case SCREEN_MODE_EXTENDED: /* 4:3 Native / Extended viewport */
+        default:
+            blit_x0 = (480.0f - CPS3_WIDTH) / 2.0f;
+            blit_y0 = (272.0f - CPS3_HEIGHT) / 2.0f;
+            blit_x1 = blit_x0 + CPS3_WIDTH;
+            blit_y1 = blit_y0 + CPS3_HEIGHT;
+            break;
+        }
+
+        //Fade_Pos_tbl[8] = { 0, 0, 640, 0, 0, 448, 640, 448 }
+        Fade_Pos_tbl[0] = 0;
+        Fade_Pos_tbl[1] = 0;
+        Fade_Pos_tbl[2] = 640;
+        Fade_Pos_tbl[3] = 0;
+        Fade_Pos_tbl[4] = 0;
+        Fade_Pos_tbl[5] = 480;
+        Fade_Pos_tbl[6] = 640;
+        Fade_Pos_tbl[7] = 480;
+
+        Scale_Factor_X = 1.0f;
+        Scale_Factor_Y = 1.0f;
+        Scale_Off_X = 0.0f;
+        Scale_Off_Y = 0.0f;
+    }
+    else{switch (mode) {
     case SCREEN_MODE_FULLSCREEN: /* Stretch — fill entire PSP screen */
-        blit_x0 = 0.0f;
-        blit_y0 = 0.0f;
-        blit_x1 = 480.0f;
-        blit_y1 = 272.0f;
+        Scale_Factor_X = 272.0f / 224.0f;
+        Scale_Factor_Y = 272.0f / 224.0f;
+        Scale_Off_X = (480.0f - 384.0f * Scale_Factor_X) / 2.0f;
+        Scale_Off_Y = 0.0f;
+
+        Min_X = 0.0f;
+        Max_X = 384.0f;
+        Min_Y = 0.0f;
+        Max_Y = 224.0f;
         break;
-    case SCREEN_MODE_ORIGINAL: { /* 4:3 — arcade aspect, fill height */
-        float w = 272.0f * (4.0f / 3.0f);
-        blit_x0 = (480.0f - w) / 2.0f;
-        blit_y0 = 0.0f;
-        blit_x1 = blit_x0 + w;
-        blit_y1 = 272.0f;
+    case SCREEN_MODE_ORIGINAL: { /* 1:1 pixel perfect */
+        Scale_Factor_X = 1.0f;
+        Scale_Factor_Y = 1.0f;
+        Scale_Off_X = 48.0f;
+        Scale_Off_Y = 24.0f;
+
+        Min_X = 0.0f;
+        Max_X = 384.0f;
+        Min_Y = 0.0f;
+        Max_Y = 224.0f;
         break;
     }
-    case SCREEN_MODE_VERTICAL: { /* 4:3 Native — arcade aspect at native height */
-        float w = 224.0f * (4.0f / 3.0f);
-        blit_x0 = (480.0f - w) / 2.0f;
-        blit_y0 = (272.0f - 224.0f) / 2.0f;
-        blit_x1 = blit_x0 + w;
-        blit_y1 = blit_y0 + 224.0f;
+    case SCREEN_MODE_VERTICAL: { /* 4:3 filling height / 1:1 pixels with extended viewport */
+        Scale_Factor_X = 1.0f;
+        Scale_Factor_Y = 1.0f;
+        Scale_Off_X = 48.0f;
+        Scale_Off_Y = 24.0f;
+
+        Min_X = 0.0f;
+        Max_X = 384.0f;
+        Min_Y = -16.0f;
+        Max_Y = 230.0f;
         break;
     }
-    case SCREEN_MODE_EXTENDED: /* Native — pixel perfect 384x224 centered */
+    case SCREEN_MODE_EXTENDED: /* 4:3 Native / Extended viewport */
     default:
-        blit_x0 = (480.0f - CPS3_WIDTH) / 2.0f;
-        blit_y0 = (272.0f - CPS3_HEIGHT) / 2.0f;
-        blit_x1 = blit_x0 + CPS3_WIDTH;
-        blit_y1 = blit_y0 + CPS3_HEIGHT;
+        Scale_Factor_X = 1.0f;
+        Scale_Factor_Y = 1.0f;
+        Scale_Off_X = 48.0f;
+        Scale_Off_Y = 24.0f;
+
+        Min_X = -48.0f;
+        Max_X = 480.0f;
+        Min_Y = -24.0f;
+        Max_Y = 272.0f;
         break;
     }
 
@@ -92,6 +157,8 @@ void setupScaling(int mode) {
     Fade_Pos_tbl[5] = Max_Y * 480 / 224;
     Fade_Pos_tbl[6] = Max_X * 640 / 384;
     Fade_Pos_tbl[7] = Max_Y * 480 / 224;
+
+    }
 }
 
 void enableOffscreenMode() { }
@@ -183,10 +250,10 @@ void startFrame(){
     if (RTT_Enabled) {
         sceGuScissor(0, 0, CPS3_WIDTH, CPS3_HEIGHT);
     } else {
-        s32 sx = (s32)SCALE_X(0);
-        s32 sy = (s32)SCALE_Y(0);
-        s32 sw = (s32)(SCALE_X(384) - 5);
-        s32 sh = (s32)SCALE_Y(224);
+        s32 sx = (s32)SCALE_X(Min_X);
+        s32 sy = (s32)SCALE_Y(Min_Y);
+        s32 sw = (s32)(Max_X - Min_X) * Scale_Factor_X;
+        s32 sh = (s32)(Max_Y - Min_Y) * Scale_Factor_Y;
         sceGuScissor(sx, sy, sw, sh);
     }
     sceGuEnable(GU_SCISSOR_TEST);
@@ -194,12 +261,15 @@ void startFrame(){
 }
 
 void endFrame(){
+    sceGuTexFilter(blit_filter ? GU_NEAREST : GU_LINEAR,
+                   blit_filter ? GU_NEAREST : GU_LINEAR);
     if (!RTT_Enabled) {
         /* Direct path — just finish and swap */
         sceGuFinish();
         sceGuSync(GU_SYNC_FINISH, GU_SYNC_WHAT_DONE);
         sceDisplayWaitVblankStart();
         sceGuSwapBuffers();
+        backBuf ^= 1;
         return;
     }
 
@@ -226,8 +296,6 @@ void endFrame(){
     void *rttAbs = (void*)((u32)sceGeEdramGetAddr() + (u32)rttBuf);
     sceGuTexImage(0, RTT_BUF_WIDTH, 256, RTT_BUF_WIDTH, rttAbs);
     sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGB);
-    sceGuTexFilter(blit_filter ? GU_NEAREST : GU_LINEAR,
-                   blit_filter ? GU_NEAREST : GU_LINEAR);
     sceGuEnable(GU_TEXTURE_2D);
 
     BlitVertex *v = (BlitVertex*)sceGuGetMemory(2 * sizeof(BlitVertex));

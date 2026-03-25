@@ -58,6 +58,10 @@ void cpInitTask();
 void cpReadyTask(u16 num, void* func_adrs);
 void cpExitTask(u16 num);
 
+// clock declarations
+extern void updateClock();
+extern void setClock(int clockMode);
+
 bool RUNNING = 1;
 
 int c_x, c_y, c_v_x = 1, c_v_y = 1;
@@ -198,6 +202,13 @@ void AcrMain() {
         }
 
         appCopyKeyData();
+
+        updateClock();
+
+        if(RTT_Enabled)
+            forceClock(CLOCK_333);
+        else
+            forceClock(CLOCK_266);
 
         render_start();
 

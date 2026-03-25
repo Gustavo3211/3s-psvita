@@ -10,7 +10,7 @@
 #include "Game/main.h"
 
 // PSP_MODULE_INFO is required
-PSP_MODULE_INFO("3rd-strike", 0, 5, 1);
+PSP_MODULE_INFO("3rd-strike", 0, 9, 9);
 //PSP_MAIN_THREAD_ATTR(PSP_THREAD_ATTR_VFPU | PSP_THREAD_ATTR_USER);
 PSP_MAIN_THREAD_ATTR(PSP_THREAD_ATTR_VFPU | PSP_THREAD_ATTR_USER);
 PSP_HEAP_SIZE_KB(-1024);
@@ -18,9 +18,45 @@ PSP_HEAP_THRESHOLD_SIZE_KB(1024);
 
 // global variables
 volatile int g_request_pause = 0;
+extern int RTT_Enabled;
 
 extern void adxSuspend(void);
 extern void adxResume(void);
+
+int clock_mode = CLOCK_300;
+int clock_mode_temp = -1;
+
+void updateClock(){
+    if(clock_mode_temp != clock_mode){
+        switch (clock_mode) {
+        case CLOCK_222:
+            scePowerSetClockFrequency(222, 222, 111);
+            break;
+        case CLOCK_266:
+            scePowerSetClockFrequency(266, 266, 133);
+            break;
+        case CLOCK_300:
+            scePowerSetClockFrequency(300, 300, 150);
+            break;
+        case CLOCK_333:
+            scePowerSetClockFrequency(333, 333, 166);
+            break;
+        default:
+            break;
+        }
+        
+        clock_mode_temp = clock_mode;
+    }
+}
+
+void setClock(int clockMode){
+    clock_mode = clockMode;
+}
+
+void forceClock(int clockMode){
+    clock_mode_temp = -1;
+    setClock(clockMode);
+}
 
 int power_callback(int unknown, int powerInfo, void *common) {
     if (powerInfo & PSP_POWER_CB_SUSPENDING) {
@@ -35,8 +71,11 @@ int power_callback(int unknown, int powerInfo, void *common) {
         /* Proactively reopen AFS fds — sceIoRead on stale fd may hang
            rather than return error on some firmware */
         afsReopen();
-        /* Restore 333MHz — OS may reset clock after sleep */
-        scePowerSetClockFrequency(333, 333, 166);
+        /* Restore Clock Frequency — OS may reset clock after sleep */
+        if(RTT_Enabled)
+            forceClock(CLOCK_333);
+        else
+            forceClock(CLOCK_266);
         /* Resume audio playback */
         adxResume();
     }
@@ -69,8 +108,6 @@ int setup_callbacks(void) {
 int main(void)  {
     // Use above functions to make exiting possible
     setup_callbacks();
-
-    scePowerSetClockFrequency(333, 333, 166);
 
     initGu();
 
