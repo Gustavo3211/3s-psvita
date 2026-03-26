@@ -157,6 +157,8 @@ void ppgWriteQuadOnly(Vertex* pos, u32 col, u32 texCode) {
 
 
     vertices = (TextureVertex*)sceGuGetMemory(4 * sizeof(TextureVertex));
+    if(vertices == NULL)
+        return;
     texture_handle = LO_16_BITS(texCode) - 1;
     tex = &flTexture[texture_handle];
 
@@ -166,14 +168,14 @@ void ppgWriteQuadOnly(Vertex* pos, u32 col, u32 texCode) {
     for (i = 0; i < 4; i++) {
         vertices[i].x = SCALE_X(pos[i].x);
         vertices[i].y = SCALE_Y(pos[i].y);
-        vertices[i].z = pos[i].z * 0xFFFF;
+        vertices[i].z = pos[i].z ;
         vertices[i].u = pos[i].u * w_f;
         vertices[i].v = pos[i].v * h_f;
         vertices[i].colour = col;
     }
 
     flSetRenderState(FLRENDER_TEXSTAGE0, texCode);
-    sceGuDrawArray(GU_TRIANGLE_STRIP, GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 4, 0, vertices);
+    sceGuDrawArray(GU_TRIANGLE_STRIP, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 4, 0, vertices);
 }
 
 void ppgWriteQuadOnly2(Vertex* pos, u32 col, u32 texCode) {
@@ -184,6 +186,8 @@ void ppgWriteQuadOnly2(Vertex* pos, u32 col, u32 texCode) {
     //quadOnly2DrawLast(texCode);
 
     TextureVertex *vertices = sceGuGetMemory(2 * sizeof(TextureVertex));
+    if(vertices == NULL)
+        return;
     int texture_handle = LO_16_BITS(texCode) - 1;
     FLTexture *tex = &flTexture[texture_handle];
     s32 i;
@@ -194,14 +198,14 @@ void ppgWriteQuadOnly2(Vertex* pos, u32 col, u32 texCode) {
     for (i = 0; i < 2; i++) {
         vertices[i].x = SCALE_X(pos[i*3].x);
         vertices[i].y = SCALE_Y(pos[i*3].y);
-        vertices[i].z = pos[i*3].z  * 0xFFFF;
+        vertices[i].z = pos[i*3].z;
         vertices[i].u = pos[i*3].u * w_f;
         vertices[i].v = pos[i*3].v * h_f;
         vertices[i].colour = col;
     }
 
     flSetRenderState(FLRENDER_TEXSTAGE0, texCode);
-    sceGuDrawArray(GU_SPRITES, GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 2, 0, vertices);
+    sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 2, 0, vertices);
 }
 
 void ppgWriteQuadOnly2T(Vertex* pos, u32 col, u32 texCode, TextureVertex *vertices) {
@@ -221,7 +225,7 @@ void ppgWriteQuadOnly2T(Vertex* pos, u32 col, u32 texCode, TextureVertex *vertic
     for (i = 0; i < 2; i++) {
         vertices[i].x = SCALE_X(pos[i*3].x);
         vertices[i].y = SCALE_Y(pos[i*3].y);
-        vertices[i].z = pos[i*3].z  * 0xFFFF;
+        vertices[i].z = pos[i*3].z;
         vertices[i].u = pos[i*3].u * w_f;
         vertices[i].v = pos[i*3].v * h_f;
         vertices[i].colour = col;
@@ -383,6 +387,8 @@ s32 ppgWriteQuadUseTrans(Vertex* pos, u32 col, PPGDataList* tb, s32 tix, s32 cix
             qvtx[3].z = pos[3].z;
 
             TextureVertex *vertices = sceGuGetMemory(2 * transTotal * sizeof(TextureVertex));
+            if(vertices == NULL)
+                return 1;
             u32 v_i = 0, v_s = 0;
             u32 tex_temp = -1;
             u32 texCode;
@@ -421,7 +427,7 @@ s32 ppgWriteQuadUseTrans(Vertex* pos, u32 col, PPGDataList* tb, s32 tix, s32 cix
                 if(texCode != tex_temp){
                     if(v_i > v_s){
                         flSetRenderState(FLRENDER_TEXSTAGE0, tex_temp);
-                        sceGuDrawArray(GU_SPRITES, GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, v_i - v_s, 0, &vertices[v_s]);
+                        sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, v_i - v_s, 0, &vertices[v_s]);
                     }
                     v_s = v_i;
                     tex_temp = texCode;
@@ -451,7 +457,7 @@ s32 ppgWriteQuadUseTrans(Vertex* pos, u32 col, PPGDataList* tb, s32 tix, s32 cix
             }
             if(v_i > v_s){
                 flSetRenderState(FLRENDER_TEXSTAGE0, texCode);
-                sceGuDrawArray(GU_SPRITES, GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, v_i - v_s, 0, &vertices[v_s]);
+                sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, v_i - v_s, 0, &vertices[v_s]);
             }
 
             return 1;

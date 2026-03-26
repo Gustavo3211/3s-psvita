@@ -47,6 +47,8 @@ static struct {
 static u16 rb16(const u8 *p) { return (p[0]<<8)|p[1]; }
 static u32 rb32(const u8 *p) { return (p[0]<<24)|(p[1]<<16)|(p[2]<<8)|p[3]; }
 
+u16 Sound_Mono = 0;
+
 static void dec_block(const u8 *blk, ChSt *ch, s16 *out, s32 stride, s32 spb, s32 c1, s32 c2) {
     s32 scale = rb16(blk);
     const u8 *d = blk + 2;
@@ -209,14 +211,31 @@ static void adx_psp_callback(void *buf, unsigned int reqn, void *userdata) {
 
     u32 step = ((u32)P.sample_rate << 16) / PSP_OUTPUT_RATE;
 
-    for (u32 i = 0; i < reqn; i++) {
-        resample_frac += step;
-        while (resample_frac >= 0x10000) {
-            decode_next_sample();
-            resample_frac -= 0x10000;
+    if(Sound_Mono){
+        u16 last_m_0, last_m_1, last_m;
+        for (u32 i = 0; i < reqn; i++) {
+            resample_frac += step;
+            while (resample_frac >= 0x10000) {
+                decode_next_sample();
+                resample_frac -= 0x10000;
+            }
+            last_m_0 = last_l >> 1;
+            last_m_1 = last_r >> 1;
+            last_m = last_m_0 + last_m_1;
+            out[i * 2]     = last_m;
+            out[i * 2 + 1] = last_m;
         }
-        out[i * 2]     = last_l;
-        out[i * 2 + 1] = last_r;
+    }
+    else{
+        for (u32 i = 0; i < reqn; i++) {
+            resample_frac += step;
+            while (resample_frac >= 0x10000) {
+                decode_next_sample();
+                resample_frac -= 0x10000;
+            }
+            out[i * 2]     = last_l;
+            out[i * 2 + 1] = last_r;
+        }
     }
 }
 
@@ -496,8 +515,7 @@ void ADX_SetOutVol(s32 vol) {
 }
 
 void ADX_SetMono(s32 mono) {
-    /* Mono/stereo mode — not implemented on PSP yet. */
-    (void)mono;
+    Sound_Mono = mono;
 }
 
 s32 ADX_GetNumFiles(void) {

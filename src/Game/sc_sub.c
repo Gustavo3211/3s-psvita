@@ -2268,6 +2268,8 @@ void dispButtonImage(s32 px, s32 py, s32 pz, s32 sx, s32 sy, s32 cl, s32 ix) {
         return;
 
     TextureVertex *vertices = (TextureVertex*)sceGuGetMemory(2 * sizeof(TextureVertex));
+    if(vertices == NULL)
+        return;
     u32 texCode = ppgGetUsingTextureHandle(&ppgScrTex, 5) | (ppgGetUsingPaletteHandle(&ppgScrPalShot, 0) << 0x10);
     int texture_handle = LO_16_BITS(texCode) - 1;
     FLTexture *tex = &flTexture[texture_handle];
@@ -2292,7 +2294,7 @@ void dispButtonImage(s32 px, s32 py, s32 pz, s32 sx, s32 sy, s32 cl, s32 ix) {
         vertices[i].x = SCALE_X(vecs[i].x);
         vertices[i].y = SCALE_Y(vecs[i].y);
     }
-    vertices[0].z = vertices[1].z = PrioBase[pz] * 0xFFFF;
+    vertices[0].z = vertices[1].z = PrioBase[pz];
     vertices[0].u = ((scrnAddTex1UV[ix][0] / 256.0f) * tex->width);
     vertices[1].u = (((scrnAddTex1UV[ix][0] + scrnAddTex1UV[ix][2]) / 256.0f) * tex->width);
     vertices[0].v = ((scrnAddTex1UV[ix][1] / 128.0f) * tex->height);
@@ -2301,7 +2303,7 @@ void dispButtonImage(s32 px, s32 py, s32 pz, s32 sx, s32 sy, s32 cl, s32 ix) {
 
     flSetRenderState(FLRENDER_TEXSTAGE0, texCode);
     
-    sceGuDrawArray(GU_SPRITES, GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 2, 0, vertices);
+    sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 2, 0, vertices);
 }
 
 void dispButtonImage2(s32 px, s32 py, s32 pz, s32 sx, s32 sy, s32 cl, s32 ix) {
@@ -2309,6 +2311,8 @@ void dispButtonImage2(s32 px, s32 py, s32 pz, s32 sx, s32 sy, s32 cl, s32 ix) {
         return;
 
     TextureVertex *vertices = (TextureVertex*)sceGuGetMemory(2 * sizeof(TextureVertex));
+    if(vertices == NULL)
+        return;
     u32 texCode = ppgGetUsingTextureHandle(&ppgScrTex, 5) | (ppgGetUsingPaletteHandle(&ppgScrPalShot, 0) << 0x10);
     int texture_handle = LO_16_BITS(texCode) - 1;
     FLTexture *tex = &flTexture[texture_handle];
@@ -2322,14 +2326,14 @@ void dispButtonImage2(s32 px, s32 py, s32 pz, s32 sx, s32 sy, s32 cl, s32 ix) {
     vertices[0].y = SCALE_Y(py);
     vertices[1].x = SCALE_X(px + sx);
     vertices[1].y = SCALE_Y(py + sy);
-    vertices[0].z = vertices[1].z = PrioBase[pz] * 0xFFFF;
+    vertices[0].z = vertices[1].z = PrioBase[pz];
     vertices[0].u = ((scrnAddTex1UV[ix][0] / 256.0f) * tex->width);
     vertices[1].u = (((scrnAddTex1UV[ix][0] + scrnAddTex1UV[ix][2]) / 256.0f) * tex->width);
     vertices[0].v = ((scrnAddTex1UV[ix][1] / 128.0f) * tex->height);
     vertices[1].v = (((scrnAddTex1UV[ix][1] + scrnAddTex1UV[ix][3]) / 128.0f) * tex->height);
     vertices[0].colour = vertices[1].colour = 0xFFFFFFFF - (cl << 24);
     flSetRenderState(FLRENDER_TEXSTAGE0, texCode);
-    sceGuDrawArray(GU_SPRITES, GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 2, 0, vertices);
+    sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 2, 0, vertices);
 }
 
 void dispSaveLoadTitle(void* ewk) {
@@ -2337,6 +2341,8 @@ void dispSaveLoadTitle(void* ewk) {
         return;
 
     TextureVertex *vertices = (TextureVertex*)sceGuGetMemory(4 * sizeof(TextureVertex));
+    if(vertices == NULL)
+        return;
     u32 texCode = ppgGetUsingTextureHandle(&ppgScrTex, 6) | (ppgGetUsingPaletteHandle(&ppgScrPalOpt, 0) << 0x10);
     int texture_handle = LO_16_BITS(texCode) - 1;
     FLTexture *tex = &flTexture[texture_handle];
@@ -2377,10 +2383,10 @@ void dispSaveLoadTitle(void* ewk) {
         for(j = 0; j < 2; j++){
             vertices[j * 3].x = SCALE_X(pos[j + 2].x);
             vertices[j * 3].y = SCALE_Y(pos[j + 2].y);
-            vertices[j * 3].z = pos[j + 2].z * 0xFFFF;
+            vertices[j * 3].z = pos[j + 2].z;
         }
 
-        sceGuDrawArray(GU_SPRITES, GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 2, 0, vertices);
+        sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 2, 0, vertices);
         step_t += 36.0f;
         vertices[0].v = vertices[3].v;
         vertices[3].v = step_t;

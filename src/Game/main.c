@@ -61,6 +61,7 @@ void cpExitTask(u16 num);
 // clock declarations
 extern void updateClock();
 extern void setClock(int clockMode);
+extern volatile int g_request_pause;
 
 bool RUNNING = 1;
 
@@ -98,14 +99,12 @@ void AcrMain() {
         Debug_w[DEBUG_BG_DRAW_OFF] = 1;
     }
     if(p1sw_buff & 0x8000){
-        render_mode = SCREEN_MODE_VERTICAL;
-    }
-    else{
-        render_mode = SCREEN_MODE_FULLSCREEN;
+        //Debug_w[DEBUG_USE_GILL] = 1;
     }
     setupScaling(render_mode);
 
     while (RUNNING) {
+        g_request_pause = 0;
         initRenderState(0);
 
         mpp_w.ds_h[0] = mpp_w.ds_h[1];
@@ -206,9 +205,9 @@ void AcrMain() {
         updateClock();
 
         if(RTT_Enabled)
-            forceClock(CLOCK_333);
+            setClock(CLOCK_333);
         else
-            forceClock(CLOCK_266);
+            setClock(CLOCK_300);
 
         render_start();
 

@@ -12,7 +12,7 @@ extern void ppgResetTextureCache(void);
 extern s16 render_mode;
 
 // variables
-static unsigned int __attribute__((aligned(64))) list[0x20000];
+static unsigned int __attribute__((aligned(64))) list[0x40000];
 
 static void * fbp0;
 static void * fbp1;
@@ -50,7 +50,16 @@ float Scale_Factor_Y = 1.0f;
 float Scale_Off_X = 0.0f;
 float Scale_Off_Y = 0.0f;
 
+/* keep track of the scaling mode */
+int RTT_Enabled_temp = -1;
+int Scaling_mode_temp = -1;
+
 void setupScaling(int mode) {
+    if(RTT_Enabled_temp == RTT_Enabled && Scaling_mode_temp == mode)
+        return;
+    RTT_Enabled_temp = RTT_Enabled;
+    Scaling_mode_temp = mode;
+
     if(RTT_Enabled){
         switch (mode) {
         case SCREEN_MODE_FULLSCREEN: /* Stretch — fill entire PSP screen */
@@ -100,9 +109,9 @@ void setupScaling(int mode) {
     }
     else{switch (mode) {
     case SCREEN_MODE_FULLSCREEN: /* Stretch — fill entire PSP screen */
-        Scale_Factor_X = 272.0f / 224.0f;
+        Scale_Factor_X = 480.0f / 384.0f;
         Scale_Factor_Y = 272.0f / 224.0f;
-        Scale_Off_X = (480.0f - 384.0f * Scale_Factor_X) / 2.0f;
+        Scale_Off_X = 0.0f;
         Scale_Off_Y = 0.0f;
 
         Min_X = 0.0f;
@@ -141,10 +150,10 @@ void setupScaling(int mode) {
         Scale_Off_X = 48.0f;
         Scale_Off_Y = 24.0f;
 
-        Min_X = -48.0f;
-        Max_X = 480.0f;
-        Min_Y = -24.0f;
-        Max_Y = 272.0f;
+        Min_X = -32.0f;
+        Max_X = SCREEN_WIDTH - 16.0f;
+        Min_Y = -20.0f;
+        Max_Y = SCREEN_HEIGHT - 8.0f;
         break;
     }
 
@@ -157,7 +166,6 @@ void setupScaling(int mode) {
     Fade_Pos_tbl[5] = Max_Y * 480 / 224;
     Fade_Pos_tbl[6] = Max_X * 640 / 384;
     Fade_Pos_tbl[7] = Max_Y * 480 / 224;
-
     }
 }
 
@@ -169,7 +177,7 @@ void initGu(){
     fbp0 = guGetStaticVramBuffer(BUFFER_WIDTH, SCREEN_HEIGHT, GU_PSM_8888);
     fbp1 = guGetStaticVramBuffer(BUFFER_WIDTH, SCREEN_HEIGHT, GU_PSM_8888);
     zBuff = guGetStaticVramBuffer(BUFFER_WIDTH, SCREEN_HEIGHT, GU_PSM_4444);
-    rttBuf = guGetStaticVramBuffer(RTT_BUF_WIDTH, 256, GU_PSM_8888);  /* 256 = power-of-2 for clean texture sampling */
+    rttBuf = guGetStaticVramBuffer(RTT_BUF_WIDTH, CPS3_HEIGHT, GU_PSM_8888);  /* 256 = power-of-2 for clean texture sampling */
 
     backBuf = 0;
 
@@ -207,6 +215,7 @@ void initGu(){
     sceGuDisplay(GU_TRUE);
 
     my_gu_init = 1;
+    backBuf = 0;
 }
 
 void endGu(){
@@ -225,14 +234,14 @@ void startFrame(){
 
     if (RTT_Enabled) {
         sceGuDrawBufferList(GU_PSM_8888, rttBuf, RTT_BUF_WIDTH);
-        ppgResetTextureCache();
         sceGuOffset(2048 - (CPS3_WIDTH / 2) + 10, 2048 - (CPS3_HEIGHT / 2) + 10);
         sceGuViewport(2048, 2048, CPS3_WIDTH, CPS3_HEIGHT);
-        Scale_Factor_X = 1.0f; Scale_Factor_Y = 1.0f;
-        Scale_Off_X = 0.0f; Scale_Off_Y = 0.0f;
-    } else {
-        setupScaling(render_mode);
     }
+    else{
+        sceGuOffset(2048 - (SCREEN_WIDTH / 2) + 10, 2048 - (SCREEN_HEIGHT / 2) + 10);
+        sceGuViewport(2048, 2048, SCREEN_WIDTH, SCREEN_HEIGHT);
+    }
+    ppgResetTextureCache();
 
     sceGuClearColor(bg_color);
     sceGuClearDepth(0xFFFF);
@@ -242,21 +251,25 @@ void startFrame(){
         sceGuScissor(0, 0, CPS3_WIDTH, CPS3_HEIGHT);
         sceGuEnable(GU_SCISSOR_TEST);
         sceGuClear(GU_COLOR_BUFFER_BIT | GU_DEPTH_BUFFER_BIT);
-    } else {
-        sceGuDisable(GU_SCISSOR_TEST);
-        sceGuClear(GU_COLOR_BUFFER_BIT | GU_DEPTH_BUFFER_BIT);
     }
 
-    if (RTT_Enabled) {
-        sceGuScissor(0, 0, CPS3_WIDTH, CPS3_HEIGHT);
-    } else {
+    else {
+        sceGuDisable(GU_SCISSOR_TEST);
+
+        sceGuClear(GU_COLOR_BUFFER_BIT | GU_DEPTH_BUFFER_BIT);
         s32 sx = (s32)SCALE_X(Min_X);
+        if(sx < 0)
+            sx = 0;
         s32 sy = (s32)SCALE_Y(Min_Y);
+        if(sy < 0)
+            sy = 0;
         s32 sw = (s32)(Max_X - Min_X) * Scale_Factor_X;
         s32 sh = (s32)(Max_Y - Min_Y) * Scale_Factor_Y;
         sceGuScissor(sx, sy, sw, sh);
+
+        sceGuEnable(GU_SCISSOR_TEST);
     }
-    sceGuEnable(GU_SCISSOR_TEST);
+    //sceGuEnable(GU_SCISSOR_TEST);
     sceGuEnable(GU_TEXTURE_2D);
 }
 

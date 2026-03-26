@@ -187,8 +187,10 @@ void njdp2d_draw_0() {
         return;
     }
     vertices_total = (ColorVertex*) sceGuGetMemory(w * sizeof(ColorVertex));
-    if(vertices_total == NULL)
+    if(vertices_total == NULL){
+        njdp2d_init();
         return;
+    }
 
     w = 0;
 
@@ -202,12 +204,12 @@ void njdp2d_draw_0() {
                 k = -j + 5;
                 vertices[k].x = vertices[j].x = SCALE_X(njdp2d_w.prim[i].v[j].x);
                 vertices[k].y = vertices[j].y = SCALE_Y(njdp2d_w.prim[i].v[j].y);
-                vertices[k].z = vertices[j].z = njdp2d_w.prim[i].v[j].z * 0xFFFF;
+                vertices[k].z = vertices[j].z = njdp2d_w.prim[i].v[j].z;
                 vertices[k].colour = vertices[j].colour = njdp2d_w.prim[i].col;
             }
             vertices[5].x = SCALE_X(njdp2d_w.prim[i].v[j].x);
             vertices[5].y = SCALE_Y(njdp2d_w.prim[i].v[j].y);
-            vertices[5].z = njdp2d_w.prim[i].v[j].z * 0xFFFF;
+            vertices[5].z = njdp2d_w.prim[i].v[j].z;
             vertices[5].colour = njdp2d_w.prim[i].col;
             w += 6;
         }

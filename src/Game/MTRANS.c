@@ -32,8 +32,8 @@ s32 curr_bright;
 SpriteChipSet seqs_w;
 
 // bss
-f32 PrioBase[PRIO_BASE_SIZE];
-f32 PrioBaseOriginal[PRIO_BASE_SIZE];
+u32 PrioBase[PRIO_BASE_SIZE];
+u32 PrioBaseOriginal[PRIO_BASE_SIZE];
 
 // rodata
 static const u16 flptbl[4] = { 0x0000, 0x8000, 0x4000, 0xC000 };
@@ -1521,7 +1521,7 @@ void appSetupBasePriority() {
     s32 i;
 
     for (i = 0; i < PRIO_BASE_SIZE; i++) {
-        PrioBaseOriginal[i] = ((i * 512) + 1) / 65535.0f;
+        PrioBaseOriginal[i] = ((i * 512) + 1) >> 1;
     }
 }
 
@@ -1534,7 +1534,7 @@ void appSetupTempPriority() {
 }
 
 void appRenewTempPriority_1_Chip() {
-    njTranslate(NULL, 0, 0, 1.0f / 65536.0f); // 1 / 2^(-16)
+    njTranslate(NULL, 0, 0, 1.0f / 2.0f); // 1 / 2^(-16)
 }
 
 void appRenewTempPriority(s32 z) {
@@ -1608,6 +1608,8 @@ void seqsAfterProcess() {
                 return;
 
         vertices = (TextureVertex*)sceGuGetMemory(2 * seqs_w.sprTotal * sizeof(TextureVertex));
+        if(vertices == NULL)
+            return;
         int k = 0, j, w = 0;
         u32 val_temp = -1;
 
@@ -1625,16 +1627,16 @@ void seqsAfterProcess() {
                 for (j = 0; j < 2; j++) {
                     vert = &c->v[j];
                     tc = &c->t[j];
-                    vertices[j + k].x = SCALE_X(vert->x);
-                    vertices[j + k].y = SCALE_Y(vert->y);
-                    vertices[j + k].z = vert->z * 0xFFFF;
+                    vertices[j + k].x = (s32)SCALE_X(vert->x);
+                    vertices[j + k].y = (s32)SCALE_Y(vert->y);
+                    vertices[j + k].z = vert->z;
                     vertices[j + k].u = tc->s * tex->width;
                     vertices[j + k].v = tc->t * tex->height;
                     vertices[j + k].colour = c->vertex_color;
                 }
 
                 if(val != val_temp){
-                    sceGuDrawArray(GU_SPRITES, GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, k - w, 0, &vertices[w]);
+                    sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, k - w, 0, &vertices[w]);
                     w = k;
                     val_temp = val;
                     flSetRenderState(FLRENDER_TEXSTAGE0, val);
@@ -1642,7 +1644,7 @@ void seqsAfterProcess() {
                 k += 2;
             }
         }
-        sceGuDrawArray(GU_SPRITES, GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, k - w, 0, &vertices[w]);
+        sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, k - w, 0, &vertices[w]);
     }
 }
 
