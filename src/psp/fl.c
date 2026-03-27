@@ -1182,8 +1182,10 @@ static s32 system_work_init() {
     void* temp;
 
     flMemset(&flPs2State, 0, sizeof(FLPS2State));
+    //DEMMA WORKING MEMORY int temp_size = 0x01800000;
+    //ORIGINAL MEMORY int temp_size = 0x01800000;
+    //PSP FAT MEMORY(?) int temp_size = 0x01200000;
     int temp_size = 0x01800000;
-    //int temp_size = 0x01C00000;
 
     temp = memalign(16, temp_size);
 
@@ -1194,8 +1196,10 @@ static s32 system_work_init() {
     }
 
     fmsInitialize(&flFMS, temp, temp_size, 0x16);
+    //DEMMA WORKING MEMORY const int system_memory_size = 0xA00000;
     const int system_memory_size = 0xA00000;
-    //const int system_memory_size = 0x1000000;
+    //ORIGINAL MEMORY const int system_memory_size = 0x1000000;
+    //PSP FAT MEMORY(?) const int system_memory_size = 0x0A00000;
     temp = flAllocMemoryS(system_memory_size);
     mflInit(temp, system_memory_size, 0x16);
 

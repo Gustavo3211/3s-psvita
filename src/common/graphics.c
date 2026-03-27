@@ -7,7 +7,6 @@
 #include "Game/WORK_SYS.h"
 #include "Game/sc_data.h"
 
-
 extern void ppgResetTextureCache(void);
 extern s16 render_mode;
 
@@ -62,13 +61,19 @@ void setupScaling(int mode) {
 
     if(RTT_Enabled){
         switch (mode) {
-        case SCREEN_MODE_FULLSCREEN: /* Stretch — fill entire PSP screen */
+        case SCREEN_MODE_STRETCH: /* Stretch — fill entire PSP screen */
             blit_x0 = 0.0f;
             blit_y0 = 0.0f;
             blit_x1 = 480.0f;
             blit_y1 = 272.0f;
             break;
-        case SCREEN_MODE_ORIGINAL: { /* 1:1 pixel perfect */
+        case SCREEN_MODE_SQUARE: /* Pseudo 4:3 */
+            blit_x0 = 40.0f;
+            blit_y0 = 0.0f;
+            blit_x1 = 440.0f;
+            blit_y1 = 272.0f;
+            break;
+        case SCREEN_MODE_NATIVE: { /* 1:1 pixel perfect */
             blit_x0 = (480.0f - CPS3_WIDTH) / 2.0f;
             blit_y0 = (272.0f - CPS3_HEIGHT) / 2.0f;
             blit_x1 = blit_x0 + CPS3_WIDTH;
@@ -108,7 +113,7 @@ void setupScaling(int mode) {
         Scale_Off_Y = 0.0f;
     }
     else{switch (mode) {
-    case SCREEN_MODE_FULLSCREEN: /* Stretch — fill entire PSP screen */
+    case SCREEN_MODE_STRETCH: /* Stretch — fill entire PSP screen */
         Scale_Factor_X = 480.0f / 384.0f;
         Scale_Factor_Y = 272.0f / 224.0f;
         Scale_Off_X = 0.0f;
@@ -119,7 +124,18 @@ void setupScaling(int mode) {
         Min_Y = 0.0f;
         Max_Y = 224.0f;
         break;
-    case SCREEN_MODE_ORIGINAL: { /* 1:1 pixel perfect */
+    case SCREEN_MODE_SQUARE: /* Pseudo 4:3 */
+        Scale_Factor_X = 400.0f / 384.0f;
+        Scale_Factor_Y = 272.0f / 246.0f;
+        Scale_Off_X = 40.0f;
+        Scale_Off_Y = 16.0f * Scale_Factor_Y;
+
+        Min_X = 0.0f;
+        Max_X = 384.0f;
+        Min_Y = -16.0f;
+        Max_Y = 230.0f;
+        break;
+    case SCREEN_MODE_NATIVE: { /* 1:1 pixel perfect */
         Scale_Factor_X = 1.0f;
         Scale_Factor_Y = 1.0f;
         Scale_Off_X = 48.0f;
@@ -159,13 +175,18 @@ void setupScaling(int mode) {
 
     //Fade_Pos_tbl[8] = { 0, 0, 640, 0, 0, 448, 640, 448 }
     Fade_Pos_tbl[0] = Min_X * 640 / 384;
-    Fade_Pos_tbl[1] = Min_Y * 488 / 224;
+    Fade_Pos_tbl[1] = Min_X * 488 / 224;
     Fade_Pos_tbl[2] = Max_X * 640 / 384;
-    Fade_Pos_tbl[3] = Min_X * 640 / 384;
+    Fade_Pos_tbl[3] = Min_Y * 640 / 384;
     Fade_Pos_tbl[4] = Min_Y * 480 / 224;
     Fade_Pos_tbl[5] = Max_Y * 480 / 224;
     Fade_Pos_tbl[6] = Max_X * 640 / 384;
     Fade_Pos_tbl[7] = Max_Y * 480 / 224;
+
+    blit_x0 = 0.0f;
+    blit_y0 = 0.0f;
+    blit_x1 = 1.0f;
+    blit_y1 = 1.0f;
     }
 }
 
@@ -264,7 +285,11 @@ void startFrame(){
         if(sy < 0)
             sy = 0;
         s32 sw = (s32)(Max_X - Min_X) * Scale_Factor_X;
+        if(sw + sx > SCREEN_WIDTH)
+            sw = SCREEN_WIDTH - sx;
         s32 sh = (s32)(Max_Y - Min_Y) * Scale_Factor_Y;
+        if(sh + sy > SCREEN_HEIGHT)
+            sh = SCREEN_HEIGHT - sy;
         sceGuScissor(sx, sy, sw, sh);
 
         sceGuEnable(GU_SCISSOR_TEST);
@@ -274,6 +299,7 @@ void startFrame(){
 }
 
 void endFrame(){
+
     sceGuTexFilter(blit_filter ? GU_NEAREST : GU_LINEAR,
                    blit_filter ? GU_NEAREST : GU_LINEAR);
     if (!RTT_Enabled) {

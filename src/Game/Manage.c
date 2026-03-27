@@ -1929,6 +1929,7 @@ void Game_Manage_12th() {
         // if in car bonus, clock is set to 300
         if(!RTT_Enabled)
             setClock(CLOCK_300);
+
         bcounter_write();
     }
 }

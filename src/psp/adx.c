@@ -203,25 +203,24 @@ static void decode_next_sample(void) {
 
 static void adx_psp_callback(void *buf, unsigned int reqn, void *userdata) {
     s16 *out = (s16 *)buf;
+    u16 last_m;
+    u32 step;
 
     if (P.stat != ADX_STAT_PLAYING || P.buf == NULL || adx_paused) {
         memset(buf, 0, reqn * 4);
         return;
     }
 
-    u32 step = ((u32)P.sample_rate << 16) / PSP_OUTPUT_RATE;
+    step = ((u32)P.sample_rate << 16) / PSP_OUTPUT_RATE;
 
     if(Sound_Mono){
-        u16 last_m_0, last_m_1, last_m;
         for (u32 i = 0; i < reqn; i++) {
             resample_frac += step;
             while (resample_frac >= 0x10000) {
                 decode_next_sample();
                 resample_frac -= 0x10000;
             }
-            last_m_0 = last_l >> 1;
-            last_m_1 = last_r >> 1;
-            last_m = last_m_0 + last_m_1;
+            last_m = (last_l + last_r) >> 1;
             out[i * 2]     = last_m;
             out[i * 2 + 1] = last_m;
         }

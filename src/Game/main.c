@@ -207,7 +207,7 @@ void AcrMain() {
         if(RTT_Enabled)
             setClock(CLOCK_333);
         else
-            setClock(CLOCK_300);
+            setClock(CLOCK_266);
 
         render_start();
 

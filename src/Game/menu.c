@@ -2163,7 +2163,14 @@ void Screen_Exit_Check(struct _TASK* task_ptr, s16 PL_id) {
     }
 }
 
-/* PSP render modes: 0=Stretch, 1=4:3, 2=Native */
+/*
+    PSP render modes:
+    0 = Stretch
+    1 = Square (Pseudo 4:3)
+    2 = Native
+    3 = Vertical
+    4 = Extended
+*/
 
 void Screen_Move_Sub_LR(u16 sw) {
     s16 flag = 0;
@@ -2175,9 +2182,9 @@ void Screen_Move_Sub_LR(u16 sw) {
     */
     if (Menu_Cursor_Y[0] == 0 && (sw == 4 || sw == 8)) {
         if (sw == 8) {
-            render_mode = (render_mode + 1) > 3 ? 0 : render_mode + 1;
+            render_mode = (render_mode + 1) > 4 ? 0 : render_mode + 1;
         } else {
-            render_mode = (render_mode - 1) < 0 ? 3 : render_mode - 1;
+            render_mode = (render_mode - 1) < 0 ? 4 : render_mode - 1;
         }
         setupScaling(render_mode);
         flag = 1;

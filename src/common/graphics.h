@@ -29,10 +29,11 @@ extern "C" {
 #endif
 
 // Screen mode enums
-#define SCREEN_MODE_FULLSCREEN 0
-#define SCREEN_MODE_ORIGINAL   1
-#define SCREEN_MODE_VERTICAL   2
-#define SCREEN_MODE_EXTENDED   3
+#define SCREEN_MODE_STRETCH     0
+#define SCREEN_MODE_SQUARE      1
+#define SCREEN_MODE_NATIVE      2
+#define SCREEN_MODE_VERTICAL    3
+#define SCREEN_MODE_EXTENDED    4
 
 // CPS3 clipping bounds (used by decompiled game code)
 extern float Min_X, Max_X, Min_Y, Max_Y;
