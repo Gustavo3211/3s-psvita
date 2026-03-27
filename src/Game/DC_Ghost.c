@@ -194,7 +194,6 @@ void njdp2d_draw_0() {
         return;
     }
 
-    u32 color_temp, color_fix;
     w = 0;
 
     sceGuDisable(GU_TEXTURE_2D);
@@ -203,23 +202,17 @@ void njdp2d_draw_0() {
         if (njdp2d_w.prim[i].type == 0) {
             vertices = &vertices_total[w];
 
-            // swap R and B
-            color_temp = njdp2d_w.prim[i].col;
-            color_fix = color_temp & 0xFF00FF00;
-            color_fix += (color_temp & 0x00FF0000) >> 16;
-            color_fix += (color_temp & 0x000000FF) << 16;
-
             for(j = 0; j < 3; j++){
                 k = -j + 5;
                 vertices[k].x = vertices[j].x = SCALE_X(njdp2d_w.prim[i].v[j].x);
                 vertices[k].y = vertices[j].y = SCALE_Y(njdp2d_w.prim[i].v[j].y);
                 vertices[k].z = vertices[j].z = njdp2d_w.prim[i].v[j].z;
-                vertices[k].colour = vertices[j].colour = color_fix;
+                vertices[k].colour = vertices[j].colour = fixARGB(njdp2d_w.prim[i].col);
             }
             vertices[5].x = SCALE_X(njdp2d_w.prim[i].v[j].x);
             vertices[5].y = SCALE_Y(njdp2d_w.prim[i].v[j].y);
             vertices[5].z = njdp2d_w.prim[i].v[j].z;
-            vertices[5].colour = color_fix;
+            vertices[5].colour = vertices[j].colour;
             w += 6;
         }
     }

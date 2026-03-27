@@ -171,7 +171,7 @@ void ppgWriteQuadOnly(Vertex* pos, u32 col, u32 texCode) {
         vertices[i].z = pos[i].z ;
         vertices[i].u = pos[i].u * w_f;
         vertices[i].v = pos[i].v * h_f;
-        vertices[i].colour = col;
+        vertices[i].colour = fixARGB(col);
     }
 
     flSetRenderState(FLRENDER_TEXSTAGE0, texCode);
@@ -201,7 +201,7 @@ void ppgWriteQuadOnly2(Vertex* pos, u32 col, u32 texCode) {
         vertices[i].z = pos[i*3].z;
         vertices[i].u = pos[i*3].u * w_f;
         vertices[i].v = pos[i*3].v * h_f;
-        vertices[i].colour = col;
+        vertices[i].colour = fixARGB(col);
     }
 
     flSetRenderState(FLRENDER_TEXSTAGE0, texCode);
@@ -228,7 +228,7 @@ void ppgWriteQuadOnly2T(Vertex* pos, u32 col, u32 texCode, TextureVertex *vertic
         vertices[i].z = pos[i*3].z;
         vertices[i].u = pos[i*3].u * w_f;
         vertices[i].v = pos[i*3].v * h_f;
-        vertices[i].colour = col;
+        vertices[i].colour = fixARGB(col);
     }
 }
 

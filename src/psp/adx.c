@@ -47,6 +47,12 @@ static struct {
 static u16 rb16(const u8 *p) { return (p[0]<<8)|p[1]; }
 static u32 rb32(const u8 *p) { return (p[0]<<24)|(p[1]<<16)|(p[2]<<8)|p[3]; }
 
+// DEMMA just trying stuff out to fix crashes
+static u8* old_buf_safe = NULL;
+
+static void adx_lock();
+static void adx_unlock();
+
 u16 Sound_Mono = 0;
 
 static void dec_block(const u8 *blk, ChSt *ch, s16 *out, s32 stride, s32 spb, s32 c1, s32 c2) {
@@ -258,45 +264,109 @@ static void adxPlayInternal(u16 fnum, s32 sync) {
     u8 *buf = (u8 *)memalign(16, file_size);
     if (!buf) return;
 
-    /* Cancel any pending async load and stale preload */
+    /* Read file FIRST (no lock needed yet) */
+    if (!afsReadSync(fnum, buf, file_size)) {
+        free(buf);
+        return;
+    }
+
+    /* Parse into TEMP variables — NOT into P */
+    s32 data_offset, channels, sample_rate, block_size;
+    s32 spb, frame_size, coeff1, coeff2;
+    s32 loop_enabled = 0, loop_start = 0, loop_end = 0;
+    ChSt temp_ch[MAX_CH];
+
+    {
+        const u8 *h = buf;
+
+        if (file_size < 20 || h[0] != 0x80) {
+            free(buf);
+            return;
+        }
+
+        data_offset = (s32)rb16(h + 2) + 4;
+        channels = h[7];
+        if (channels < 1 || channels > MAX_CH) {
+            free(buf);
+            return;
+        }
+
+        sample_rate = (s32)rb32(h + 8);
+        block_size = h[5];
+        if (block_size < 3) {
+            free(buf);
+            return;
+        }
+
+        spb = (block_size - 2) * 2;
+        frame_size = block_size * channels;
+
+        double w = 2.0 * M_PI * 500.0 / (double)sample_rate;
+        double x = sqrt(2.0) - cos(w);
+        double y = sqrt(2.0) - 1.0;
+        double z = (x - sqrt((x+y)*(x-y))) / y;
+
+        coeff1 = (s32)(z * 8192.0);
+        coeff2 = (s32)(z * z * -4096.0);
+
+        memset(temp_ch, 0, sizeof(temp_ch));
+
+        u8 ver = h[0x12];
+        if (ver == 3 && file_size > 0x2C) {
+            if (rb32(h + 0x18) != 0) {
+                loop_enabled = 1;
+                loop_start = (s32)rb32(h + 0x20) - data_offset;
+                loop_end   = (s32)rb32(h + 0x28) - data_offset;
+                if (loop_start < 0) loop_start = 0;
+                if (loop_end < 0) loop_end = 0;
+            }
+        }
+    }
+
+    /* Cancel pending stuff safely */
+    adx_lock();
     if (adx_load_buf) { free(adx_load_buf); adx_load_buf = NULL; }
-    adx_loading = 0;
     if (adx_next_buf) { free(adx_next_buf); adx_next_buf = NULL; }
+
+    adx_loading = 0;
     adx_next_ready = 0;
     adx_next_consumed = 0;
 
-    if (sync) {
-        if (!afsReadSync(fnum, buf, file_size)) {
-            free(buf);
-            return;
-        }
-        /* Stop before parse — parse_header modifies P fields that the
-           callback reads. Without this, the callback decodes old audio
-           data with new coefficients/offsets → static blast. */
-        P.stat = ADX_STAT_STOP;
-        if (parse_header(buf, file_size) < 0) {
-            free(buf);
-            return;
-        }
-        u8 *old = P.buf;
-        s32 old_owned = adx_buf_owned;
-        P.buf = buf;
-        P.buf_size = file_size;
-        P.pos = 0;
-        blk_pos = blk_avail = 0;
-        resample_frac = 0;
-        adx_buf_owned = 1;
-        P.stat = ADX_STAT_PLAYING;
-        if (old && old_owned) adx_free_pending = old;
-    } else {
-        P.stat = ADX_STAT_STOP;
-        if (P.buf && adx_buf_owned) { adx_free_pending = P.buf; }
-        P.buf = NULL;
-        P.pos = 0;
-        adx_load_buf = buf;
-        adx_load_size = file_size;
-        adx_loading = 1;
-        afsReadAsync(fnum, buf, file_size);
+    /* Save old buffer */
+    u8 *old = P.buf;
+    s32 old_owned = adx_buf_owned;
+
+    /* Apply new state atomically */
+    P.data_offset = data_offset;
+    P.channels = channels;
+    P.sample_rate = sample_rate;
+    P.block_size = block_size;
+    P.spb = spb;
+    P.frame_size = frame_size;
+    P.coeff1 = coeff1;
+    P.coeff2 = coeff2;
+    memcpy(P.ch, temp_ch, sizeof(temp_ch));
+
+    P.loop_enabled = loop_enabled;
+    P.loop_start_byte = loop_start;
+    P.loop_end_byte = loop_end;
+
+    P.buf = buf;
+    P.buf_size = file_size;
+    P.pos = 0;
+
+    blk_pos = 0;
+    blk_avail = 0;
+    resample_frac = 0;
+
+    adx_buf_owned = 1;
+    P.stat = ADX_STAT_PLAYING;
+
+    adx_unlock();
+
+    /* Free old buffer */
+    if (old && old_owned) {
+        adx_free_pending = old;
     }
 }
 
@@ -376,7 +446,9 @@ void ADX_Exit(void) {
 }
 
 void ADX_Stop(void) {
+    pspAudioSetChannelCallback(1, NULL, NULL);
     adxStop();
+    pspAudioSetChannelCallback(1, adx_psp_callback, NULL);
 }
 
 void ADX_StartAfs(s32 fnum) {
@@ -566,4 +638,12 @@ void ADX_ProcessTracks(void) {
     if (adx_entry_count > 0 && adxGetStat() == ADX_STAT_PLAYEND) {
         ADX_StartSeamless();
     }
+}
+
+static void adx_lock() {
+    pspAudioSetChannelCallback(1, NULL, NULL);
+}
+
+static void adx_unlock() {
+    pspAudioSetChannelCallback(1, adx_psp_callback, NULL);
 }

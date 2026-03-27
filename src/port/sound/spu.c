@@ -8,6 +8,7 @@
  * mixes 48 voices into a stereo output stream.
  */
 #include "port/sound/spu.h"
+#include "psp/adx.h"
 
 #include "common.h"
 #include <pspkernel.h>
@@ -438,22 +439,45 @@ void SPU_PSP_CB(void* buf, unsigned int reqn, void* pdata) {
         return;
     }
 
-    for (unsigned int i = 0; i < reqn; i++) {
-        spu_resample_frac += step;
+    u16 last_m;
+    if(Sound_Mono){
+        for (unsigned int i = 0; i < reqn; i++) {
+            spu_resample_frac += step;
 
-        while (spu_resample_frac >= 0x10000) {
-            SPU_Tick(spu_last_output);
-            spu_resample_frac -= 0x10000;
+            while (spu_resample_frac >= 0x10000) {
+                SPU_Tick(spu_last_output);
+                spu_resample_frac -= 0x10000;
 
-            cb_timer--;
-            if (!cb_timer) {
-                timer_cb();
-                cb_timer = 192;
+                cb_timer--;
+                if (!cb_timer) {
+                    timer_cb();
+                    cb_timer = 192;
+                }
             }
-        }
 
-        out[i * 2]     = spu_last_output[0];
-        out[i * 2 + 1] = spu_last_output[1];
+            last_m = (spu_last_output[0] + spu_last_output[1]) >> 1;
+            out[i * 2]     = last_m;
+            out[i * 2 + 1] = last_m;
+        }
+    }
+    else{
+        for (unsigned int i = 0; i < reqn; i++) {
+            spu_resample_frac += step;
+
+            while (spu_resample_frac >= 0x10000) {
+                SPU_Tick(spu_last_output);
+                spu_resample_frac -= 0x10000;
+
+                cb_timer--;
+                if (!cb_timer) {
+                    timer_cb();
+                    cb_timer = 192;
+                }
+            }
+
+            out[i * 2]     = spu_last_output[0];
+            out[i * 2 + 1] = spu_last_output[1];
+        }
     }
 }
 

@@ -166,16 +166,16 @@ void setupScaling(int mode) {
         Scale_Off_X = 48.0f;
         Scale_Off_Y = 24.0f;
 
-        Min_X = -32.0f;
-        Max_X = SCREEN_WIDTH - 16.0f;
-        Min_Y = -20.0f;
-        Max_Y = SCREEN_HEIGHT - 8.0f;
+        Min_X = -Scale_Off_X;
+        Max_X = SCREEN_WIDTH;
+        Min_Y = -Scale_Off_Y;
+        Max_Y = SCREEN_HEIGHT;
         break;
     }
 
     //Fade_Pos_tbl[8] = { 0, 0, 640, 0, 0, 448, 640, 448 }
     Fade_Pos_tbl[0] = Min_X * 640 / 384;
-    Fade_Pos_tbl[1] = Min_X * 488 / 224;
+    Fade_Pos_tbl[1] = Min_Y * 488 / 224;
     Fade_Pos_tbl[2] = Max_X * 640 / 384;
     Fade_Pos_tbl[3] = Min_Y * 640 / 384;
     Fade_Pos_tbl[4] = Min_Y * 480 / 224;

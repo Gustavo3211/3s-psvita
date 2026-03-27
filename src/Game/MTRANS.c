@@ -1632,7 +1632,7 @@ void seqsAfterProcess() {
                     vertices[j + k].z = vert->z;
                     vertices[j + k].u = tc->s * tex->width;
                     vertices[j + k].v = tc->t * tex->height;
-                    vertices[j + k].colour = c->vertex_color;
+                    vertices[j + k].colour = fixARGB(c->vertex_color);
                 }
 
                 if(val != val_temp){

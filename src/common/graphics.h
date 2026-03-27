@@ -23,6 +23,9 @@ extern float Scale_Off_Y;
 #define SCALE_X(x) ((x) * Scale_Factor_X + Scale_Off_X)
 #define SCALE_Y(y) ((y) * Scale_Factor_Y + Scale_Off_Y)
 
+// colour macros - fix color formats
+#define fixARGB(c) ( (c & 0xFF00FF00) + ((c & 0x00FF0000) >> 16) + ((c & 0x000000FF) << 16) )
+
 // c++ guard
 #ifdef __cplusplus
 extern "C" {
