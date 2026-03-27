@@ -54,6 +54,7 @@ static void adx_lock();
 static void adx_unlock();
 
 u16 Sound_Mono = 0;
+u16 Sound_Muffled = 0;
 
 static void dec_block(const u8 *blk, ChSt *ch, s16 *out, s32 stride, s32 spb, s32 c1, s32 c2) {
     s32 scale = rb16(blk);
@@ -209,7 +210,7 @@ static void decode_next_sample(void) {
 
 static void adx_psp_callback(void *buf, unsigned int reqn, void *userdata) {
     s16 *out = (s16 *)buf;
-    u16 last_m;
+    u16 last_m = 0;
     u32 step;
 
     if (P.stat != ADX_STAT_PLAYING || P.buf == NULL || adx_paused) {
@@ -220,26 +221,59 @@ static void adx_psp_callback(void *buf, unsigned int reqn, void *userdata) {
     step = ((u32)P.sample_rate << 16) / PSP_OUTPUT_RATE;
 
     if(Sound_Mono){
-        for (u32 i = 0; i < reqn; i++) {
-            resample_frac += step;
-            while (resample_frac >= 0x10000) {
-                decode_next_sample();
-                resample_frac -= 0x10000;
+        if(Sound_Muffled){
+            for (u32 i = 0; i < reqn; i++) {
+                resample_frac += step;
+                while (resample_frac >= 0x10000) {
+                    decode_next_sample();
+                    resample_frac -= 0x10000;
+                }
+                if(!(i & 0x3))
+                    last_m = (last_l + last_r) >> 1;
+                out[i * 2]     = last_m;
+                out[i * 2 + 1] = last_m;
             }
-            last_m = (last_l + last_r) >> 1;
-            out[i * 2]     = last_m;
-            out[i * 2 + 1] = last_m;
+        }
+        else{
+            for (u32 i = 0; i < reqn; i++) {
+                resample_frac += step;
+                while (resample_frac >= 0x10000) {
+                    decode_next_sample();
+                    resample_frac -= 0x10000;
+                }
+                last_m = (last_l + last_r) >> 1;
+                out[i * 2]     = last_m;
+                out[i * 2 + 1] = last_m;
+            }
         }
     }
     else{
-        for (u32 i = 0; i < reqn; i++) {
-            resample_frac += step;
-            while (resample_frac >= 0x10000) {
-                decode_next_sample();
-                resample_frac -= 0x10000;
+        if(Sound_Muffled){
+            u16 l_temp = 0, r_temp = 0;
+            for (u32 i = 0; i < reqn; i++) {
+                resample_frac += step;
+                while (resample_frac >= 0x10000) {
+                    decode_next_sample();
+                    resample_frac -= 0x10000;
+                }
+                if(!(i & 0x3)){
+                    l_temp = last_l;
+                    r_temp = last_r;
+                }
+                out[i * 2]     = l_temp;
+                out[i * 2 + 1] = r_temp;
             }
-            out[i * 2]     = last_l;
-            out[i * 2 + 1] = last_r;
+        }
+        else{
+            for (u32 i = 0; i < reqn; i++) {
+                resample_frac += step;
+                while (resample_frac >= 0x10000) {
+                    decode_next_sample();
+                    resample_frac -= 0x10000;
+                }
+                out[i * 2]     = last_l;
+                out[i * 2 + 1] = last_r;
+            }
         }
     }
 }
@@ -381,6 +415,8 @@ void adxPlaySync(u16 fnum) {
 void adxPlayLoop(u16 fnum, u32 ls, u32 le) { adxPlay(fnum); }
 
 void adxStop(void) {
+    adx_lock();
+
     P.stat = ADX_STAT_STOP;
     if (P.buf && adx_buf_owned) { adx_free_pending = P.buf; }
     P.buf = NULL;
@@ -391,6 +427,8 @@ void adxStop(void) {
     adx_next_ready = 0;
     adx_next_consumed = 0;
     P.pos = 0;
+
+    adx_unlock();
 }
 
 void adxSetVolume(s32 vol) {
@@ -543,10 +581,14 @@ void ADX_StartSeamless(void) {
 void ADX_StartMem(void* data, u32 size) {
     if (!data || size == 0) return;
 
+    adx_lock();
+
     P.stat = ADX_STAT_STOP;
     if (P.buf && adx_buf_owned) { adx_free_pending = P.buf; }
     P.buf = NULL;
     P.pos = 0;
+
+    adx_unlock();
 
     /* Clear stale seamless preload from previous track */
     if (adx_next_buf) { free(adx_next_buf); adx_next_buf = NULL; }
@@ -583,6 +625,10 @@ void ADX_SetOutVol(s32 vol) {
         mapped = (999 + vol) * 127 / 999;
     }
     adxSetVolume(mapped);
+}
+
+void ADX_SetMuffle(s32 muffled) {
+    Sound_Muffled = muffled;
 }
 
 void ADX_SetMono(s32 mono) {

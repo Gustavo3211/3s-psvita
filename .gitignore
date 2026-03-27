@@ -3,3 +3,4 @@ build_wsl/
 *.obj
 *.o
 *.d
+PSP/

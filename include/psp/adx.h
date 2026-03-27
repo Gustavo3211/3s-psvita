@@ -51,6 +51,7 @@ void ADX_StartSeamless(void);
 void ADX_StartMem(void* data, u32 size);
 s32  ADX_GetState(void);
 void ADX_SetOutVol(s32 vol);
+void ADX_SetMuffle(s32 muffled);
 void ADX_SetMono(s32 mono);
 s32  ADX_GetNumFiles(void);
 void ADX_ResetEntry(void);

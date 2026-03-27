@@ -61,6 +61,9 @@ void Pause_Check(struct _TASK* task_ptr) {
     case 2:
         Setup_Come_Out(task_ptr);
         break;
+    
+    default:
+        ADX_SetMuffle(0);
     }
 }
 
@@ -223,6 +226,7 @@ void Setup_Pause(struct _TASK* task_ptr) {
     Order_Timer[0x8A] = 1;
     effect_66_init(0x8A, 9, 2, 7, -1, -1, -0x3FFC);
     SsBgmHalfVolume(1);
+    ADX_SetMuffle(1);
     spu_all_off();
 }
 
@@ -247,6 +251,7 @@ void Setup_Come_Out(struct _TASK* task_ptr) {
     Order_Timer[0x8A] = 1;
     effect_66_init(0x8A, 9, 2, 7, -1, -1, -0x3FFC);
     SsBgmHalfVolume(1);
+    ADX_SetMuffle(1);
     spu_all_off();
 }
 
