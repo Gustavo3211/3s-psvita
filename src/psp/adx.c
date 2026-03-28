@@ -52,6 +52,8 @@ static u8* old_buf_safe = NULL;
 
 static void adx_lock();
 static void adx_unlock();
+SceUID adxLock;
+static volatile int adx_locked = 0;
 
 u16 Sound_Mono = 0;
 u16 Sound_Muffled = 0;
@@ -159,6 +161,8 @@ static void decode_next_sample(void) {
                 P.pos = P.loop_start_byte;
                 memset(P.ch, 0, sizeof(P.ch));
             } else if (adx_next_ready && adx_next_buf) {
+                adx_locked = 1;
+
                 /* Seamless swap inside callback — zero gap */
                 adx_free_pending = P.buf;
                 P.buf = adx_next_buf;
@@ -179,6 +183,7 @@ static void decode_next_sample(void) {
                 adx_next_ready = 0;
                 adx_next_consumed = 1;
                 /* Don't reset P.ch — keep ADPCM history continuous */
+                adx_locked = 0;
             } else {
                 P.stat = ADX_STAT_PLAYEND;
                 last_l = last_r = 0;
@@ -213,7 +218,7 @@ static void adx_psp_callback(void *buf, unsigned int reqn, void *userdata) {
     u16 last_m = 0;
     u32 step;
 
-    if (P.stat != ADX_STAT_PLAYING || P.buf == NULL || adx_paused) {
+    if (P.stat != ADX_STAT_PLAYING || P.buf == NULL || adx_paused || adx_locked) {
         memset(buf, 0, reqn * 4);
         return;
     }
@@ -283,12 +288,18 @@ void adxInit(void) {
     P.stat = ADX_STAT_STOP;
     P.volume = 127;
     // Use pspaudiolib callback on channel 1 (channel 0 = SPU/SFX)
+    adxLock = sceKernelCreateSema("adxLock", 0, 1, 1, NULL);
     pspAudioSetChannelCallback(1, adx_psp_callback, NULL);
 }
 
 void adxShutdown(void) {
     pspAudioSetChannelCallback(1, NULL, NULL);
     if (P.buf) free(P.buf);
+    if (adxLock >= 0) {
+        sceKernelSignalSema(adxLock, 1);
+        sceKernelDeleteSema(adxLock);
+        adxLock = -1;
+    }
 }
 
 static void adxPlayInternal(u16 fnum, s32 sync) {
@@ -427,6 +438,8 @@ void adxStop(void) {
     adx_next_ready = 0;
     adx_next_consumed = 0;
     P.pos = 0;
+    blk_pos = 0;
+    blk_avail = 0;
 
     adx_unlock();
 }
@@ -440,10 +453,14 @@ void adxSetVolume(s32 vol) {
 AdxStat adxGetStat(void) { return P.stat; }
 
 void adxUpdate(void) {
+    adx_lock();
+
     if (adx_free_pending) {
         free(adx_free_pending);
         adx_free_pending = NULL;
     }
+
+    adx_unlock();
 
     /* Check if async ADX load completed */
     if (adx_loading && afsCheckRead()) {
@@ -588,8 +605,6 @@ void ADX_StartMem(void* data, u32 size) {
     P.buf = NULL;
     P.pos = 0;
 
-    adx_unlock();
-
     /* Clear stale seamless preload from previous track */
     if (adx_next_buf) { free(adx_next_buf); adx_next_buf = NULL; }
     adx_next_ready = 0;
@@ -607,6 +622,8 @@ void ADX_StartMem(void* data, u32 size) {
     adx_buf_owned = 0;  /* static buffer, don't free */
     P.stat = ADX_STAT_PLAYING;
     adx_paused = 0;
+
+    adx_unlock();
 }
 
 s32 ADX_GetState(void) {
@@ -687,9 +704,11 @@ void ADX_ProcessTracks(void) {
 }
 
 static void adx_lock() {
-    pspAudioSetChannelCallback(1, NULL, NULL);
+    adx_locked = 1;
+    sceKernelWaitSema(adxLock, 1, NULL);
 }
 
 static void adx_unlock() {
-    pspAudioSetChannelCallback(1, adx_psp_callback, NULL);
+    sceKernelSignalSema(adxLock, 1);
+    adx_locked = 0;
 }
