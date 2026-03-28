@@ -4,7 +4,9 @@
 #include "structs.h"
 #include "types.h"
 
-extern u32 PrioBase[128]; // size: 0x200, address: 0x5E3F50
+#define PRIO_BASE_SIZE 128
+
+extern u32 PrioBase[PRIO_BASE_SIZE];
 
 void appSetupBasePriority();
 void appSetupTempPriority();

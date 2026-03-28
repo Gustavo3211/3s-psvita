@@ -71,7 +71,6 @@ ms0:/PSP/GAME/3rd-strike/
 - Would need PSP `sceUtilitySavedata*` API integration
 
 ### Audio Polish
-- `ADX_SetMono()` — mono mode not implemented (PSP always stereo)
 - ADX loading is fully synchronous — could benefit from async with double-buffered player state
 - Seamless preload system could use a dedicated I/O fd to avoid LDREQ conflicts
 

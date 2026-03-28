@@ -123,8 +123,6 @@ void Correct_Control_Time(s16 PL_id);
 s32 Check_Boss(s16 PL_id);
 u8 Setup_Battle_Country();
 
-extern volatile int g_request_pause;
-
 u8 SEL_PL_X;
 s16 Play_Type_1st;
 u16 Color7[2];
@@ -1681,7 +1679,7 @@ void Exit_6th() {
         return;
     }
 
-    if (!sndCheckVTransStatus(0) && !g_request_pause) {
+    if (!sndCheckVTransStatus(0)) {
         return;
     }
 

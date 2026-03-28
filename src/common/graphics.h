@@ -38,13 +38,12 @@ extern "C" {
 #define SCREEN_MODE_VERTICAL    3
 #define SCREEN_MODE_EXTENDED    4
 
-// CPS3 clipping bounds (used by decompiled game code)
+// CPS3 clipping bounds
 extern float Min_X, Max_X, Min_Y, Max_Y;
 
 extern s16 render_mode;
 
 // variables
-extern int Full_Screen;
 extern int RTT_Enabled;
 
 // functions

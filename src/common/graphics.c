@@ -27,7 +27,6 @@ float Min_Y = 0.0f;
 float Max_Y = 224.0f;
 
 int my_gu_init = 0;
-int Full_Screen = 0;
 int RTT_Enabled = 1;  /* 0=direct rendering, 1=RTT (no seams) */
 
 /* CPS3 native resolution */

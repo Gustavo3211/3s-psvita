@@ -40,8 +40,6 @@ void setTexture(TexturePSP *texture, int tfx){
 
 void drawTextureSet(float x1, float y1, float u1, float v1, float x2, float y2, float u2, float v2, u32 colour) {
     TextureVertex *vertices = (TextureVertex*)sceGuGetMemory(2 * sizeof(TextureVertex));
-    if(vertices == NULL)
-        return;
     //static TextureVertex vertices[2];
 
     vertices[0].u = u1;
@@ -63,8 +61,6 @@ void drawTextureSet(float x1, float y1, float u1, float v1, float x2, float y2, 
 
 void drawTexture(TexturePSP * texture, float x1, float y1, float u1, float v1, float x2, float y2, float u2, float v2, u32 colour) {
     TextureVertex *vertices = (TextureVertex*)sceGuGetMemory(2 * sizeof(TextureVertex));
-    if(vertices == NULL)
-        return;
     //static TextureVertex vertices[2];
 
     vertices[0].u = u1;
@@ -101,8 +97,6 @@ void drawTextureF(TexturePSP * texture, float x, float y) {
 
 void drawTextureH(TexturePSP * texture, float x, float y, uint32_t colour) {
     TextureVertex *vertices = (TextureVertex*)sceGuGetMemory(2 * sizeof(TextureVertex));
-    if(vertices == NULL)
-        return;
     //static TextureVertex vertices[2];
 
     vertices[0].u = -x;
@@ -132,8 +126,6 @@ void drawTextureH(TexturePSP * texture, float x, float y, uint32_t colour) {
 
 void drawTextureR(TexturePSP * texture, float x, float y, float angle, u32 colour) {
     TextureVertex *vertices = (TextureVertex*)sceGuGetMemory(3 * sizeof(TextureVertex));
-    if(vertices == NULL)
-        return;
     //static TextureVertex vertices[2];
 
     vertices[0].colour = colour;
@@ -188,8 +180,6 @@ void drawTextureR(TexturePSP * texture, float x, float y, float angle, u32 colou
 void drawRect(float x, float y, float w, float h, uint32_t color) {
 
     ColorVertex* vertices = (ColorVertex*) sceGuGetMemory(2 * sizeof(ColorVertex));
-    if(vertices == NULL)
-        return;
     //Vertex vertices[2];
 
     vertices[0].x = SCALE_X(x);

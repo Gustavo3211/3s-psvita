@@ -18,8 +18,6 @@
 //#include "PS2/ps2Quad.h"
 #include "structs.h"
 
-#define PRIO_BASE_SIZE 128
-
 typedef struct {
     Sprite2* chip;
     u16 sprTotal;
@@ -1534,7 +1532,7 @@ void appSetupTempPriority() {
 }
 
 void appRenewTempPriority_1_Chip() {
-    njTranslate(NULL, 0, 0, 1.0f / 2.0f); // 1 / 2^(-16)
+    njTranslate(NULL, 0, 0, 1.0f / 2.0f);
 }
 
 void appRenewTempPriority(s32 z) {

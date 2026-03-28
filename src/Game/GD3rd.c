@@ -208,13 +208,11 @@ s32 fsCheckCommandExecuting() {
 
 s32 fsRequestFileRead(REQ* req, u32 sec, void* buff) {
     if (buff == NULL) return 0;
-    /* PSP: sync reads — avoids I/O thread deadlock on sleep/resume
-       and memory stick is fast enough for sync */
-    return afsReadSync(req->fnum, buff, sec * SECTOR_SIZE);
+    return afsReadAsync(req->fnum, buff, sec * SECTOR_SIZE);
 }
 
 s32 fsCheckFileReaded(REQ* /* unused */) {
-    return 1;  /* Always done — reads are synchronous */
+    return afsCheckRead();
 }
 
 s32 fsFileReadSync(REQ* req, u32 sec, void* buff) {
