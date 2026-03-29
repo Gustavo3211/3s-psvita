@@ -160,7 +160,7 @@ static void decode_next_sample(void) {
                 memset(P.ch, 0, sizeof(P.ch));
             }
             else if (adx_next_ready && adx_next_buf) {
-                adx_request_swap = 1;
+                __sync_lock_test_and_set(&adx_request_swap, 1);
 
                 last_l = last_r = 0;
                 return;
@@ -174,6 +174,11 @@ static void decode_next_sample(void) {
         if (P.loop_enabled && P.loop_end_byte > 0 && P.pos >= P.loop_end_byte) {
             P.pos = P.loop_start_byte;
             memset(P.ch, 0, sizeof(P.ch));
+        }
+
+        if (!P.buf || P.pos < 0 || P.pos + P.frame_size > P.buf_size) {
+            P.stat = ADX_STAT_STOP;
+            return;
         }
 
         const u8 *src = P.buf + P.data_offset + P.pos;
@@ -654,8 +659,13 @@ void adxSuspend(void) {
 }
 
 void adxResume(void) {
+    pspAudioSetChannelCallback(1, adx_psp_callback, NULL);
+
     if (adx_was_playing) {
-        adx_paused = 0;  /* restore playback */
+        resample_frac = 0;
+        blk_pos = 0;
+        blk_avail = 0;
+        adx_paused = 0;
     }
 }
 
@@ -683,7 +693,7 @@ void ADX_ProcessTracks(void) {
         ADX_StartSeamless();
     }
 
-    if (adx_request_swap && adx_next_ready) {
+    if (adx_next_ready && __sync_bool_compare_and_swap(&adx_request_swap, 1, 0)) {
         adx_lock();
 
         u8 *old = P.buf;
@@ -716,14 +726,13 @@ void ADX_ProcessTracks(void) {
         /* Clear preload */
         adx_next_buf = NULL;
         adx_next_ready = 0;
-        adx_request_swap = 0;
         adx_next_consumed = 1;
 
         adx_unlock();
 
         /* Free AFTER unlock */
         if (old && adx_buf_owned) {
-            free(old);
+            adx_free_pending = old;
         }
     }
 }
