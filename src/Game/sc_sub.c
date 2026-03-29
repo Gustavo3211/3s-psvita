@@ -2340,7 +2340,8 @@ void dispSaveLoadTitle(void* ewk) {
     if(DEMMA_DEBUG || skip_frame)
         return;
 
-    TextureVertex *vertices = (TextureVertex*)sceGuGetMemory(2 * sizeof(TextureVertex));
+    TextureVertex *vertices = (TextureVertex*)sceGuGetMemory(6 * sizeof(TextureVertex));
+    TextureVertex v_t[2];
     if(vertices == NULL)
         return;
     u32 texCode = ppgGetUsingTextureHandle(&ppgScrTex, 6) | (ppgGetUsingPaletteHandle(&ppgScrPalOpt, 0) << 0x10);
@@ -2357,12 +2358,12 @@ void dispSaveLoadTitle(void* ewk) {
 
     wk = (WORK*)ewk;
     mlt_obj_matrix(wk, 0);
-    vertices[0].colour = vertices[1].colour = vertices[2].colour = vertices[3].colour = 0xFFFFFFFF - (wk->my_clear_level << 24);
+    v_t[0].colour = v_t[1].colour = 0xFFFFFFFF - (wk->my_clear_level << 24);
     flSetRenderState(FLRENDER_TEXSTAGE0, texCode);
-    vertices[0].u = (short) 0.0f;
-    vertices[1].u = (short) tex->width;
-    vertices[0].v = (short) 0.0f;
-    vertices[1].v = (short) 36.0f;
+    v_t[0].u = (short) 0.0f;
+    v_t[1].u = (short) tex->width;
+    v_t[0].v = (short) 0.0f;
+    v_t[1].v = (short) 36.0f;
     step_t = 36.0f;
     pos[0].x = -192.0f;
     pos[0].y = -12.0f;
@@ -2371,21 +2372,24 @@ void dispSaveLoadTitle(void* ewk) {
     pos[0].z = pos[1].z = 0.0f;
 
     int j;
-    for (i = 0; i < 4; i++) {
+    for (i = 0; i < 3; i++) {
         njCalcPoint(NULL, &pos[0], &pos[2]);
         njCalcPoint(NULL, &pos[1], &pos[3]);
 
         for(j = 0; j < 2; j++){
-            vertices[j].x = SCALE_X(pos[j + 2].x);
-            vertices[j].y = SCALE_Y(pos[j + 2].y);
-            vertices[j].z = pos[j].z;
+            v_t[j].x = SCALE_X(pos[j + 2].x);
+            v_t[j].y = SCALE_Y(pos[j + 2].y);
+            v_t[j].z = pos[j].z;
         }
 
-        sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 2, 0, vertices);
+        vertices[i * 2] = v_t[0];
+        vertices[i * 2 + 1] = v_t[1];
+
         step_t += 36.0f;
-        vertices[0].v = vertices[1].v;
-        vertices[1].v = step_t;
+        v_t[0].v = v_t[1].v;
+        v_t[1].v = step_t;
         pos[0].x += 128.0f;
         pos[1].x += 128.0f;
     }
+    sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_2D, 6, 0, vertices);
 }

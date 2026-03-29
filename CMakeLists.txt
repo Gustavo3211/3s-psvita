@@ -40,6 +40,8 @@ add_executable(${PROJECT_NAME}
     ${cseDataC}
 )
 
+set_source_files_properties(src/psp/icon0.c PROPERTIES COMPILE_FLAGS "-G0")
+
 target_include_directories(
     ${PROJECT_NAME} PRIVATE src
     ${PROJECT_NAME} PRIVATE include

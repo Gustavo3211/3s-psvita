@@ -1,9 +1,164 @@
 #include "psp/savesub.h"
 
+#include <psputility.h>
+#include <psputility_savedata.h>
+
+#include "common/graphics.h"
+
+#include <string.h>
+#include <stdbool.h>
+
+typedef struct {
+    u8 RTT_Enabled;
+    u8 blit_filter;
+    s16 render_mode;
+} SaveData;
+
+enum {
+    SAVEMODE_L_MANUAL = 0
+    , SAVEMODE_S_MANUAL
+    , SAVEMODE_L_AUTO
+    , SAVEMODE_S_AUTO
+};
+
+enum {
+    SAVE_FILETYPE_DATA = 0
+    , SAVE_FILETYPE_DIRECTIONS
+    , SAVE_FILETYPE_REPLAY
+};
+
+extern const void* getIcon0(void);
+extern const unsigned int getIcon0Len(void);
+
+u16 fileType;
+SceUtilitySavedataParam save_params;
+
+volatile SaveData save_data;
+
+void pspSaveLoad();
+void saveScreenParms();
+void loadScreenParms();
+
 void SaveInit(s32 file_type, s32 save_mode) {
-    
+    s16 mode;
+
+    switch(save_mode){
+        case SAVEMODE_L_MANUAL:
+            mode = PSP_UTILITY_SAVEDATA_AUTOLOAD;
+            break;
+
+        case SAVEMODE_S_MANUAL:
+            mode = PSP_UTILITY_SAVEDATA_AUTOSAVE;
+            break;
+
+        case SAVEMODE_L_AUTO:
+            mode = PSP_UTILITY_SAVEDATA_AUTOLOAD;
+            break;
+
+        case SAVEMODE_S_AUTO:
+            mode = PSP_UTILITY_SAVEDATA_AUTOSAVE;
+            break;
+    }
+
+    memset(&save_params, 0, sizeof(SceUtilitySavedataParam));
+    save_params.base.size = sizeof(SceUtilitySavedataParam);
+    save_params.base.language = PSP_SYSTEMPARAM_LANGUAGE_ENGLISH;
+    save_params.base.buttonSwap = PSP_UTILITY_ACCEPT_CROSS;
+    save_params.base.graphicsThread = 0x11;
+    save_params.base.accessThread = 0x13;
+    save_params.base.fontThread = 0x12;
+    save_params.base.soundThread = 0x10;
+    save_params.mode = mode;
+    save_params.overwrite = 1;
+    save_params.focus = PSP_UTILITY_SAVEDATA_FOCUS_LATEST; // Set initial focus to the newest file (for loading)
+
+    strncpy(save_params.key, "demma", sizeof(save_params.key));
+    strncpy(save_params.gameName, "SF33RD", sizeof(save_params.gameName));    // First part of the save name, game identifier name
+    strncpy(save_params.saveName, "AUTO", sizeof(save_params.saveName));    // Second part of the save name, save identifier name
+    strncpy(save_params.fileName, "SETTINGS.BIN", sizeof(save_params.fileName));    // name of the data file
+
+    // Allocate buffers used to store various parts of the save data
+    save_params.dataBuf = &save_data;
+    save_params.dataBufSize = sizeof(SaveData);
+    save_params.dataSize = sizeof(SaveData);
+
+    // Set save data
+    if (mode == PSP_UTILITY_SAVEDATA_AUTOSAVE) {
+        strcpy(save_params.sfoParam.title, "Street Fighter 3 3rd Strike");
+        strcpy(save_params.sfoParam.savedataTitle,"Save Data");
+        strcpy(save_params.sfoParam.detail,"www.github.com/demmis98/3s-psp");
+        save_params.sfoParam.parentalLevel = 1;
+
+        // Set icon0
+        save_params.icon0FileData.buf = (void*) getIcon0();
+        save_params.icon0FileData.bufSize = getIcon0Len();
+        save_params.icon0FileData.size = getIcon0Len();
+        save_params.focus = PSP_UTILITY_SAVEDATA_FOCUS_FIRSTEMPTY; // If saving, set inital focus to the first empty slot
+    }
+
+    fileType = file_type;
 }
 
 s32 SaveMove() {
+
+    if(save_params.mode != PSP_UTILITY_SAVEDATA_SAVE
+        && save_params.mode != PSP_UTILITY_SAVEDATA_AUTOSAVE
+        && save_params.mode != PSP_UTILITY_SAVEDATA_LISTSAVE
+        && save_params.mode != PSP_UTILITY_SAVEDATA_LOAD
+        && save_params.mode != PSP_UTILITY_SAVEDATA_AUTOLOAD
+        && save_params.mode != PSP_UTILITY_SAVEDATA_LISTLOAD)
+        return 0;
+
+    if(save_params.mode == PSP_UTILITY_SAVEDATA_SAVE || save_params.mode == PSP_UTILITY_SAVEDATA_AUTOSAVE)
+        saveScreenParms();
+
+    pspSaveLoad();
+
+    if((save_params.mode == PSP_UTILITY_SAVEDATA_LOAD || save_params.mode == PSP_UTILITY_SAVEDATA_AUTOLOAD)
+        && save_params.base.result == 0)
+        loadScreenParms();
+
     return 0;
+}
+
+void pspSaveLoad(){
+    int mode;
+
+    if (sceUtilitySavedataInitStart(&save_params) < 0)
+        return;
+        //return 0;
+
+    do {
+        mode = sceUtilitySavedataGetStatus();
+
+        switch(mode) {
+            case PSP_UTILITY_DIALOG_VISIBLE:
+                sceUtilitySavedataUpdate(1);
+                break;
+
+            case PSP_UTILITY_DIALOG_QUIT:
+                sceUtilitySavedataShutdownStart();
+                break;
+
+            case PSP_UTILITY_DIALOG_NONE:
+                return;
+        }
+
+        sceDisplayWaitVblankStart();
+
+    } while (mode != PSP_UTILITY_DIALOG_FINISHED);
+    //return (dialog.base.result == PSP_UTILITY_COMMON_RESULT_OK);
+    return;
+}
+
+void saveScreenParms() {
+    save_data.RTT_Enabled = RTT_Enabled;
+    save_data.blit_filter = blit_filter;
+    save_data.render_mode = render_mode;
+}
+
+void loadScreenParms() {
+    RTT_Enabled = save_data.RTT_Enabled;
+    blit_filter = save_data.blit_filter;
+    render_mode = save_data.render_mode;
 }
