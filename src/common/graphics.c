@@ -8,7 +8,7 @@
 #include "Game/sc_data.h"
 
 extern void ppgResetTextureCache(void);
-extern s16 render_mode;
+s16 render_mode = SCREEN_DEFAULT_MODE;
 
 // variables
 static unsigned int __attribute__((aligned(64))) list[0x40000];
@@ -27,7 +27,7 @@ float Min_Y = 0.0f;
 float Max_Y = 224.0f;
 
 int my_gu_init = 0;
-int RTT_Enabled = 1;  /* 0=direct rendering, 1=RTT (no seams) */
+int RTT_Enabled = SCREEN_DEFAULT_RTT;  /* 0=direct rendering, 1=RTT (no seams) */
 
 /* CPS3 native resolution */
 #define CPS3_WIDTH  384
@@ -40,7 +40,7 @@ static int backBuf = 0;
 /* Blit quad coordinates */
 static float blit_x0, blit_y0, blit_x1, blit_y1;
 static s32 scissor_trim_right = 5;
-s32 blit_filter = 0;  /* 0=bilinear, 1=nearest */
+s32 blit_filter = SCREEN_DEFAULT_FILTER;  /* 0=bilinear, 1=nearest */
 
 /* SCALE_X/SCALE_Y — identity during RTT rendering */
 float Scale_Factor_X = 1.0f;

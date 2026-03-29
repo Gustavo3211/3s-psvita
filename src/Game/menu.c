@@ -48,6 +48,7 @@
 //#include "PS2/reboot.h"
 #include "AcrSDK/common/pad.h"
 #include "structs.h"
+#include "common/graphics.h"
 
 void Default_Training_Option();
 void Dummy_Move_Sub(struct _TASK* task_ptr, s16 PL_id, s16 id, s16 type, s16 max);
@@ -131,8 +132,6 @@ void Return_Option_Mode_Sub(struct _TASK* task_ptr);
 void Screen_Adjust_Sub(s16 PL_id);
 void Screen_Exit_Check(struct _TASK* task_ptr, s16 PL_id);
 void Screen_Move_Sub_LR(u16 sw);
-s16 render_mode;
-extern s32 blit_filter;
 void Setup_Sound_Mode(u8 last_mode);
 u16 Sound_Cursor_Sub(s16 PL_id);
 u16 SD_Move_Sub_LR(u16 sw);
@@ -2154,12 +2153,10 @@ void Screen_Exit_Check(struct _TASK* task_ptr, s16 PL_id) {
     }
 
     if (Menu_Cursor_Y[PL_id] == 3) {
-        /* Default = Stretch + Bilinear + SMOOTH*/
         SE_selected();
-        render_mode = 0;
-        setupScaling(0);
-        blit_filter = 0;
-        RTT_Enabled = 1;
+        render_mode = SCREEN_DEFAULT_MODE;
+        blit_filter = SCREEN_DEFAULT_FILTER;
+        RTT_Enabled = SCREEN_DEFAULT_RTT;
     }
 }
 
@@ -2186,7 +2183,6 @@ void Screen_Move_Sub_LR(u16 sw) {
         } else {
             render_mode = (render_mode - 1) < 0 ? 4 : render_mode - 1;
         }
-        setupScaling(render_mode);
         flag = 1;
     }
 

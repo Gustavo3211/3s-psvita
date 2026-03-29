@@ -38,12 +38,16 @@ extern "C" {
 #define SCREEN_MODE_VERTICAL    3
 #define SCREEN_MODE_EXTENDED    4
 
+#define SCREEN_DEFAULT_MODE     SCREEN_MODE_STRETCH
+#define SCREEN_DEFAULT_FILTER   1
+#define SCREEN_DEFAULT_RTT      0
+
 // CPS3 clipping bounds
 extern float Min_X, Max_X, Min_Y, Max_Y;
 
-extern s16 render_mode;
-
 // variables
+extern s16 render_mode;
+extern s32 blit_filter;
 extern int RTT_Enabled;
 
 // functions
