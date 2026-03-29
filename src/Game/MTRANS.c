@@ -1532,7 +1532,7 @@ void appSetupTempPriority() {
 }
 
 void appRenewTempPriority_1_Chip() {
-    njTranslate(NULL, 0, 0, 1.0f / 2.0f);
+    njTranslate(NULL, 0, 0, 1.0f);
 }
 
 void appRenewTempPriority(s32 z) {
