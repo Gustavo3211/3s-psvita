@@ -21,7 +21,7 @@
 #define clamp(val, lo, hi) (((val) > (hi)) ? (hi) : (((val) < (lo)) ? (lo) : (val)))
 
 #define VOICE_COUNT 48
-#define MAX_ACTIVE_VOICES 16  // Cap concurrent voices for PSP CPU budget
+#define MAX_ACTIVE_VOICES 12  // Cap concurrent voices for PSP CPU budget
 
 #include "interp_table.inc"
 
@@ -72,7 +72,6 @@ typedef struct {
 
 SceUID soundLock;
 
-static void (*timer_cb)();
 static SPU_Voice voices[VOICE_COUNT];
 static u16 ram[(2 * 1024 * 1024) >> 1];
 static s16 adpcm_coefs[5][2] = {
@@ -450,7 +449,6 @@ void SPU_PSP_CB(void* buf, unsigned int reqn, void* pdata) {
 
                 cb_timer--;
                 if (!cb_timer) {
-                    timer_cb();
                     cb_timer = 192;
                 }
             }
@@ -470,7 +468,6 @@ void SPU_PSP_CB(void* buf, unsigned int reqn, void* pdata) {
 
                 cb_timer--;
                 if (!cb_timer) {
-                    timer_cb();
                     cb_timer = 192;
                 }
             }
@@ -480,8 +477,6 @@ void SPU_PSP_CB(void* buf, unsigned int reqn, void* pdata) {
         }
     }
 }
-
-static void nullcb() {}
 
 void SPU_Lock() {
     spu_locked = 1;
@@ -498,10 +493,6 @@ void SPU_Unlock() {
 }
 
 void SPU_Init(void (*cb)()) {
-    timer_cb = cb;
-    if (!cb) {
-        timer_cb = nullcb;
-    }
 
     memset(voices, 0, sizeof(voices));
     soundLock = sceKernelCreateSema("soundLock", 0, 1, 1, NULL);

@@ -15,7 +15,7 @@ typedef enum {
 #define ADX_STATE_PLAYEND  ADX_STAT_PLAYEND
 
 // variables
-extern u16 Sound_Mono;
+extern volatile u16 Sound_Mono;
 
 // Initialize/shutdown ADX audio system
 void adxInit(void);
