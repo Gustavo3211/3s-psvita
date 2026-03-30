@@ -3,6 +3,7 @@
 #include <psputility.h>
 #include <psputility_savedata.h>
 
+#include "Game/WORK_SYS.h"
 #include "common/graphics.h"
 
 #include <string.h>
@@ -13,6 +14,18 @@ typedef struct {
     u8 RTT_Enabled;
     u8 blit_filter;
     s16 render_mode;
+
+    u8 Auto_Save;
+
+    u8 SoundMode;
+    u8 BGM_Level;
+    u8 SE_Level;
+    u8 BgmType;
+
+    RANK_DATA Ranking[20];
+    u8 Extra_Option;
+    u8 PL_Color[2][20];
+    _EXTRA_OPTION extra_option;
 } SaveData;
 
 enum {
@@ -38,7 +51,12 @@ volatile SaveData save_data;
 
 void pspSaveLoad();
 void saveScreenParms();
+void saveSoundParms();
+void saveGameProgress();
+
+void loadSoundParms();
 void loadScreenParms();
+void loadGameProgress();
 
 void SaveInit(s32 file_type, s32 save_mode) {
     s16 mode;
@@ -111,14 +129,29 @@ s32 SaveMove() {
         return 0;
 
     if(save_params.mode == PSP_UTILITY_SAVEDATA_SAVE || save_params.mode == PSP_UTILITY_SAVEDATA_AUTOSAVE){
+        save_data.Auto_Save = save_w[1].Auto_Save;
+        Save_Game_Data();
+        
         saveScreenParms();
+        saveSoundParms();
     }
 
     pspSaveLoad();
 
     if((save_params.mode == PSP_UTILITY_SAVEDATA_LOAD || save_params.mode == PSP_UTILITY_SAVEDATA_AUTOLOAD)
         && save_params.base.result == 0){
-        loadScreenParms();
+
+        switch(save_data.version){
+        case 3:
+            loadGameProgress();
+        case 2:
+            loadSoundParms();
+        case 1:
+        case 0:
+            loadScreenParms();
+        }
+
+        Copy_Save_w();
     }
 
     return 0;
@@ -127,7 +160,8 @@ s32 SaveMove() {
 void pspSaveLoad(){
     int mode;
 
-    save_data.version = 1;
+    // DEMMA change this to avoid incompatibilities
+    save_data.version = 3;
 
     if (sceUtilitySavedataInitStart(&save_params) < 0)
         return;
@@ -162,8 +196,51 @@ void saveScreenParms() {
     save_data.render_mode = render_mode;
 }
 
+void saveSoundParms() {
+    save_data.SoundMode = sys_w.sound_mode;
+    save_data.BGM_Level = save_w[1].BGM_Level;
+    save_data.SE_Level = save_w[1].SE_Level;
+    save_data.BgmType = sys_w.bgm_type;
+}
+
+void saveGameProgress() {
+    int ix;
+    for (ix = 0; ix < 20; ix++) {
+        save_data.Ranking[ix] = save_w[1].Ranking[ix];
+    }
+
+    for (ix = 1; ix < 20; ix++) {
+        save_data.PL_Color[0][ix] = save_w[1].PL_Color[0][ix];
+    }
+
+    save_data.Extra_Option = save_w[1].Extra_Option;
+    save_data.extra_option = save_w[1].extra_option;
+}
+
 void loadScreenParms() {
     RTT_Enabled = save_data.RTT_Enabled;
     blit_filter = save_data.blit_filter;
     render_mode = save_data.render_mode;
+}
+
+void loadSoundParms() {
+    sys_w.sound_mode = save_data.SoundMode;
+    save_w[1].BGM_Level = save_data.BGM_Level;
+    save_w[1].SE_Level = save_data.SE_Level;
+    sys_w.bgm_type = save_data.BgmType;
+}
+
+
+void loadGameProgress() {
+    int ix;
+    for (ix = 0; ix < 20; ix++) {
+        save_w[1].Ranking[ix] = save_data.Ranking[ix];
+    }
+
+    for (ix = 1; ix < 20; ix++) {
+        save_w[1].PL_Color[0][ix] = save_data.PL_Color[0][ix];
+    }
+
+    save_w[1].Extra_Option = save_data.Extra_Option;
+    save_w[1].extra_option = save_data.extra_option;
 }
