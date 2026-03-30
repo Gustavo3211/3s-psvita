@@ -3,11 +3,15 @@
 #include <psputility.h>
 #include <psputility_savedata.h>
 
-#include "Game/WORK_SYS.h"
 #include "common/graphics.h"
 
 #include <string.h>
 #include <stdbool.h>
+
+
+//for saving
+#include "Game/WORK_SYS.h"
+#include "Game/RANKING.h"
 
 typedef struct {
     u32 version;
@@ -134,6 +138,7 @@ s32 SaveMove() {
         
         saveScreenParms();
         saveSoundParms();
+        saveGameProgress();
     }
 
     pspSaveLoad();
@@ -206,11 +211,15 @@ void saveSoundParms() {
 void saveGameProgress() {
     int ix;
     for (ix = 0; ix < 20; ix++) {
-        save_data.Ranking[ix] = save_w[1].Ranking[ix];
+        save_data.Ranking[ix] = Ranking_Data[ix];
     }
 
-    for (ix = 1; ix < 20; ix++) {
+    for (ix = 0; ix < 20; ix++) {
         save_data.PL_Color[0][ix] = save_w[1].PL_Color[0][ix];
+    }
+
+    for (ix = 0; ix < 20; ix++) {
+        save_data.PL_Color[1][ix] = save_w[1].PL_Color[1][ix];
     }
 
     save_data.Extra_Option = save_w[1].Extra_Option;
@@ -232,13 +241,19 @@ void loadSoundParms() {
 
 
 void loadGameProgress() {
-    int ix;
+    int ix, iy;
     for (ix = 0; ix < 20; ix++) {
         save_w[1].Ranking[ix] = save_data.Ranking[ix];
     }
 
-    for (ix = 1; ix < 20; ix++) {
-        save_w[1].PL_Color[0][ix] = save_data.PL_Color[0][ix];
+    for(iy = 0; iy < 6; iy++){
+        for (ix = 0; ix < 20; ix++) {
+            save_w[iy].PL_Color[0][ix] = save_data.PL_Color[0][ix];
+        }
+
+        for (ix = 0; ix < 20; ix++) {
+            save_w[iy].PL_Color[1][ix] = save_data.PL_Color[1][ix];
+        }
     }
 
     save_w[1].Extra_Option = save_data.Extra_Option;
