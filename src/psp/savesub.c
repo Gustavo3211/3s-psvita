@@ -9,6 +9,7 @@
 #include <stdbool.h>
 
 typedef struct {
+    u32 version;
     u8 RTT_Enabled;
     u8 blit_filter;
     s16 render_mode;
@@ -109,20 +110,24 @@ s32 SaveMove() {
         && save_params.mode != PSP_UTILITY_SAVEDATA_LISTLOAD)
         return 0;
 
-    if(save_params.mode == PSP_UTILITY_SAVEDATA_SAVE || save_params.mode == PSP_UTILITY_SAVEDATA_AUTOSAVE)
+    if(save_params.mode == PSP_UTILITY_SAVEDATA_SAVE || save_params.mode == PSP_UTILITY_SAVEDATA_AUTOSAVE){
         saveScreenParms();
+    }
 
     pspSaveLoad();
 
     if((save_params.mode == PSP_UTILITY_SAVEDATA_LOAD || save_params.mode == PSP_UTILITY_SAVEDATA_AUTOLOAD)
-        && save_params.base.result == 0)
+        && save_params.base.result == 0){
         loadScreenParms();
+    }
 
     return 0;
 }
 
 void pspSaveLoad(){
     int mode;
+
+    save_data.version = 1;
 
     if (sceUtilitySavedataInitStart(&save_params) < 0)
         return;
